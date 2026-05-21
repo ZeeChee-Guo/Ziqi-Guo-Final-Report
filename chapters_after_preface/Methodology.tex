@@ -1,0 +1,39 @@
+\chapter{Methodology}
+
+\section{Problem Definition}
+\begin{itemize}
+    \item Formally define the problem of anomaly and drift co-detection in time series like Jongjun did in the paper
+    \fei{You cannot use his work, but have to write in your own words.  If you are going to talk about AnDri which is not your work, then describe this in Background chapter.  Move 3.2 to Background. }
+
+    \fei{Describe your methodology using a picture to show what is the problem, and then a picture showing your solution (framework).  This chapter is all about the algorithm details so show using a picture and explain how your algorithm works.  I don't  understand how 3.5 is an algorithm method.}
+\end{itemize}
+
+
+\section{Distinguishing Anomalies and Drift}
+\begin{itemize}
+    \item How can Andri distinguish anomalies and Concept drifts
+    \item Previous methods often studied anomaly detection and concept drift detection separately, which led to confusion between the two in actual data evolution.
+    \item Andri is capable of distinguishing between short-term anomalies and drifts, thereby improving the detection accuracy.
+\end{itemize}
+
+
+\section{Limitations of Static Thresholds}
+\begin{itemize}
+    \item The disadvantages of using a fixed threshold score for anomaly detection
+\end{itemize}
+
+
+\section{Adaptive Anomaly Thresholding via Active Learning}
+\begin{itemize}
+    \item How Andri uses dynamic threshold scores based on user feedback for anomaly detection.
+    \item Formalize the user-in-the-loop active learning strategy
+    \item Initial threshold based on anomaly score quantiles
+    \item Use of Gaussian Mixture Model to model labeled anomaly scores
+    \item Iterative threshold adjustment based on user feedback and validation
+\end{itemize}
+
+
+\section{Display drift and anomaly}
+\begin{itemize}
+    \item Andri can detect anomalies and distinguish drifts, and it can also display them intuitively on the web page.  \fei{Why is this interesting as an algorithm?  }
+\end{itemize}

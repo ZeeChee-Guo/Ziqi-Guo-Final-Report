@@ -1,0 +1,52 @@
+\chapter{System Design and Implementation}
+
+\fei{Ths Methodology chapter is all about the algorithm that solves the detection problem, the dynamic threshold adjustment, and gives details on how this is done (using pictures, text and algorithm pseudocode).  This chapter is about the system implementation.}
+
+
+\section{System Overview}
+\begin{itemize}
+    \item Briefly describe the objectives and functions of the system  \fei{You definitely need a system implementation picture here to describe each component.}
+    \item Describe the overall architecture (frontend-backend interaction, module layers)
+    \item data flow diagram (from raw input to final output):  Data input → Pattern discovery → Matching and scoring → Display of drift and anomalies \fei{I don't think you do this, so not sure why this is here?  You developed an algorithm that does this?}
+\end{itemize}
+
+\section{Front-end Design}
+\begin{itemize}
+    \item User Interface Layout
+    \item Layout of the main interface (charts, labeling area, statistics panel, etc.)
+    \item User interaction methods (manual labeling, validation, region selection)
+    \item Visualization Tools
+    \item Purpose of different chart types (time series line charts, piecharts, anomaly score histograms)
+    \item How asynchronous requests trigger back-end computation
+\end{itemize}
+
+\section{Backend Architecture}
+\begin{itemize}
+    \item Core dependencies used (e.g., NumPy, scikit-learn, MatrixProfile, etc.)
+    \item API endpoints (data upload, label submission, model execution)
+    \item Communication format between frontend and backend (e.g., JSON via Ajax)
+\end{itemize}
+
+\section{Data Pipeline and File Handling}
+\begin{itemize}
+    \item Supported input format (.arff, .csv file structure)
+    \item Preprocessing steps for time series data (normalization, segmentation)
+    \item Caching intermediate results and preserving state across sessions
+\end{itemize}
+
+\section{Anomaly and Drift Co-Detection Module}
+\begin{itemize}
+    \item How to display the areas that Andri considers as drift and that other algorithms consider as anomalies, and ensure that the identification of these data is correct
+\end{itemize}
+
+
+\section{Deployment and Runtime Environment}
+\begin{itemize}
+    \item Environment dependencies (Python version, frontend tools, etc.)
+    \item End-to-end run-through (from launch to interactive results)
+\end{itemize}
+
+\section{Challenges and Design Trade-offs}
+\begin{itemize}
+    \item How to quickly display time series data on the screen while maintaining the overall shape of the data, and ensuring that the peaks and valleys are displayed correctly
+\end{itemize}

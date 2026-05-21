@@ -1,0 +1,37 @@
+\chapter{Experiments}
+
+\section{Datasets}
+\begin{itemize}
+    \item Introduce ECG, Elec, Weather dataset
+    \item Their Drift types, Anomalies (random injection)
+    \item \fei{System environment, parameters, how anomalies/drifts are injected}
+\end{itemize}
+
+\section{Baselines}
+\begin{itemize}
+    \item All baselines use fixed thresholds without drift adaptation
+    \item Integrated into AnDri for fair comparison under same labeling and thresholding interface
+    \item \fei{Include references to each baseline, GitHub source for data and code.}
+\end{itemize}
+
+\section{Evaluation Metrics}
+\begin{itemize}
+    \item Precision, Recall, F1-score  \fei{How do you measure these using what labels?}
+    \item Run the application and present the results  \fei{What does this mean technically?  Avoid general statements that are vague.  PResent what results????}
+\end{itemize}
+
+\section{Case Studies}
+\begin{itemize}
+    \item Case 1: Seasonal drift misclassified as anomaly
+    \item Case 2: ECG with active learning
+    \item  Based on the results and screenshots, I will explain in detail that the drift area was mistakenly identified as anomalies by other algorithms. Only Andri detected it as drift and did not mark it as anomalies. Or the anomalies area was not detected by other algorithms, but Andri correctly detected it.
+    \fei{Graphs are needed for each experiment and analysis.}
+    
+\end{itemize}
+
+\section{Discussion}
+\begin{itemize}
+    \item AnDri outperforms baselines in drift environments
+    \item Active learning improves anomaly detection when ground truth is partial
+    \item Limitation: labeling effort, it may be necessary to repeatedly ask the user for their judgment, and the termination of the threshold iteration process needs to take into account trade-offs.
+\end{itemize}
