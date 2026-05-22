@@ -2,9 +2,6 @@
 
 \fei{Ths Methodology chapter is all about the algorithm that solves the detection problem, the dynamic threshold adjustment, and gives details on how this is done (using pictures, text and algorithm pseudocode).  This chapter is about the system implementation.}
 
-
-\chapter{System Design and Implementation}
-
 \section{System Overview}
 
 \section{System Architecture}
@@ -18,5 +15,43 @@
 \section{Integration of Detection Results}
 
 \section{Deployment and Runtime Environment}
+The system was implemented as a browser-based interactive application with a  Python Flask backend. According to the current project repository, the recommended runtime is Python 3.9.0. The backend depends on scientific Python libraries for numerical processing, time-series transformation, anomaly scoring, clustering, and adaptive threshold estimation. Important dependencies include Flask for the web server, NumPy and pandas for data handling, scikit-learn and SciPy for modeling utilities, and time-series libraries such as STUMPY, TSB-UAD. The front-end is composed of standard web technologies, including HTML, CSS, and JavaScript, and is responsible for displaying the uploaded time series, visualizing candidate anomalies and drift regions, and collecting user feedback for active learning. The front-end and backend communicate through HTTP requests using structured data formats such as JSON, which allows the browser to update the visualization without restarting the analysis session.
+
+The application entry point is the Flask application defined in \texttt{app.py}. At startup, the application creates the Flask instance, registers the backend blueprints, sets a maximum upload size for large time-series files, and serves the main interface through the root route. The latest repository also checks whether the optional NORMA implementation exists under \texttt{algorithms/norma/norma.py}. This is necessary because the NORMA implementation is not included directly in the repository, while the remaining
+algorithms can still be used without it. Because the author of the normA algorithm did not agree to make the code public, using the normA algorithm requires applying directly to the original author. This design allows the same interface to support different baseline algorithms depending on which optional components are available in the runtime environment.
+
+For local execution, the user first creates a Python virtual environment, installs the dependencies listed in \texttt{requirements.txt}, and starts the Flask server using \texttt{python app.py}. Once the server is running, the system is available in a browser at \texttt{http://localhost:5000/}. The user
+can then choose an example dataset from the static dataset folder or upload a new supported time-series file. The backend validates the uploaded data, parses the time-series values, preprocesses the data, and executes the anomaly and drift co-detection procedure. The results are returned to the frontend, where
+the time series, candidate anomalies, drift regions, and summary statistics are rendered for inspection.
+
+The runtime workflow is interactive rather than a one-time batch process. After the initial results are displayed, the user can select training regions, mark anomalous points, remove incorrect labels, or repeat the workflow with other algorithms. Each feedback action is sent back to the Flask backend, which
+updates the corresponding threshold or algorithm state and returns revised results to the browser. This interaction is important for AnDri because the system is designed to support anomaly and drift co-exploration, not only to produce a static list of detected points.
+
+
+Although the current repository documents local Flask execution, the same system
+can be deployed on a server by placing the Flask application behind a production
+web-server configuration. Figure~\ref{fig:deployment_runtime} illustrates this
+server-side deployment pattern. In this architecture, browser requests first
+reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX
+can serve static frontend resources directly and forward dynamic requests to the
+Python application process managed by an application server such as Gunicorn.
+
+\begin{center}
+    \includegraphics[width=0.85\textwidth]{figures/deploy.png}
+    \captionof{figure}{Deployment runtime architecture for the server version of AnDri. NGINX acts as the public web server and reverse proxy, while Gunicorn forwards dynamic requests to the Python web application layer.}
+    \label{fig:deployment_runtime}
+\end{center}
+
+
+This separation is useful because static files can be handled and cached
+independently, while computational requests such as dataset uploading, anomaly
+detection, label submission, and threshold recalculation are processed by the
+backend. A server deployment also requires more careful management of package
+versions, file permissions, upload limits, static-resource paths, and runtime
+logs. These considerations are important because AnDri is not only an offline
+algorithmic prototype; it is also an interactive system in which usability,
+response time, and reproducible execution affect how effectively users can
+inspect anomalies and concept drift.
+
 
 \section{Implementation Challenges and Design Trade-offs}
