@@ -7,16 +7,62 @@ Chapter 2 Background will have 2.1, 2.2, 2.4, just describing defintions and lan
 
 \fei{Section 2.6 and 2.7 are more implementation details, which you describe in your later Chapter on system implementation.}
 
+This chapter introduces the background concepts needed to understand anomaly and drift co-detection in time-series data. It defines time-series data and subsequences, describes common types of time-series anomalies, and explains concept drift and its impact on anomaly detection. The chapter also discusses subsequence similarity, normal patterns, and the role of active learning in settings with limited labels. Detailed comparisons with existing methods and implementation details are presented in later chapters.
 
 
 
 \section{Time Series Data}
+A time series is an ordered sequence of observations collected over time. The temporal order is essential because each value is interpreted not only by its magnitude, but also by its position relative to earlier and later observations. Time-series data appear in many real-world domains, including electrocardiogram (ECG) monitoring, electricity consumption, weather measurements, financial markets, and computer system logs \citep{schmidl2022anomaly}.
+
+Time series can be either univariate or multivariate. A univariate time series records one variable at each time step and can be represented as
+\[T = [x_1, x_2, \ldots, x_n], \]
+where \(x_i \in \mathbb{R}\) is the observed value at time index \(i\), and \(n\) is the length of the series. For example, a single ECG voltage signal, a temperature record, or an electricity demand curve can be treated as a univariate time series. In contrast, a multivariate time series records multiple variables at each time step. It can be represented as
+\[T = [\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n],\]
+where each \(\mathbf{x}_i \in \mathbb{R}^d\) is a vector of \(d\) measurements. For example, a patient-monitoring system may record heart rate, blood pressure, oxygen level, and temperature simultaneously.
+This report focuses on univariate time series, which is the setting used in the AnDri system paper and the related extended technical report \citep{park2025andri,park2025adaptive}. In this setting, AnDri analyzes changes in a single ordered sequence and compares local subsequences against learned normal patterns. A subsequence of length \(\ell\) starting at time \(i\) is written as
+\[T_{i,\ell} = [x_i, x_{i+1}, \ldots, x_{i+\ell-1}].\]
+When the subsequence length is fixed, this report uses \(T_i\) as shorthand for \(T_{i,\ell}\). Subsequence-based analysis is important because many anomalies and drift patterns are not fully described by a single point. Instead, they appear as changes in local shape, frequency, amplitude, or duration over a short interval of time.
+
+Although multivariate time-series anomaly detection is an important research direction, it is outside the main scope of this report. Extending AnDri from univariate to multivariate time series would require modeling not only the temporal pattern of each variable, but also the relationships among variables. This extension is therefore discussed later as a direction for future work.
 
 \section{Time Series Anomalies}
 
+An anomaly is an observation or pattern that does not conform to the expected behavior of the data \citep{chandola2009anomaly}. In time-series analysis, anomalies are usually interpreted relative to temporal context. A value that is abnormal in one period may be normal in another period if the underlying operating condition has changed.
+
+There are several common types of time-series anomalies, including point anomalies, subsequence anomalies, and contextual anomalies \citep{chandola2009anomaly,schmidl2022anomaly}. A point anomaly is a single value that differs significantly from nearby or expected values. For example, a sudden isolated spike in a temperature sensor may indicate a measurement error or a short-lived event. A subsequence anomaly, also related to the idea of a collective anomaly, occurs when a consecutive segment has an unusual shape or pattern, even if each individual point is not extreme \citep{chandola2009anomaly}. A contextual anomaly depends on the surrounding situation: for instance, a high heart rate may be normal during exercise but abnormal during rest \citep{chandola2009anomaly}.
+
+In this report, anomaly detection is mainly considered at the subsequence level. This choice matches the AnDri problem setting, where the system compares local time-series segments against learned normal patterns and assigns anomaly scores to candidate abnormal regions \citep{park2025adaptive}. Subsequence-level detection is useful because it captures shape-based deviations, not only isolated numerical outliers.
+
+
 \section{Concept Drift in Time Series}
+
+Concept drift refers to a change in the underlying data distribution over time \citep{gama2014survey,lu2019learning}. In time-series data, this means that the definition of normal behavior is not fixed. A pattern that was unusual in the past may become normal later, or a previously normal pattern may disappear as the process evolves.
+
+Concept drift can appear in several forms. Abrupt drift occurs when the data changes suddenly from one normal pattern to another. For example, electricity usage may drop sharply between weekday and weekend activity. Gradual drift occurs when the transition happens slowly, such as seasonal temperature changes from winter to spring. Recurring drift occurs when a previously seen normal pattern returns, such as repeated daily, weekly, or seasonal shopping behavior. These drift types are important because a detector that assumes a single stationary normal pattern may incorrectly classify changing normal behavior as anomalous.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/background_ecg_drift_anomaly.png}
+    \caption{Example of a time series containing both concept drift and anomalies. The yellow region represents a transition between normal activity patterns, while the red regions indicate anomalous ECG subsequences. Source: \citep{park2025adaptive}.}
+    \label{fig:background-ecg-drift-anomaly}
+\end{figure}
 
 \section{Relationship Between Anomalies and Concept Drift}
 
+Anomalies and concept drift are closely related because both appear as changes in the data. The key difference is their interpretation. An anomaly is usually an unexpected or undesirable deviation from normal behavior, while concept drift represents an evolution of what should be considered normal. This distinction is difficult in practice because both may occur in the same time series and may have similar visual shapes.
+
+The difficulty is especially clear in anomaly detection. If a detector uses only an old normal baseline, a legitimate new normal pattern may be flagged as anomalous, increasing false positives. However, if the detector adapts too quickly, it may absorb true anomalies into the normal model and miss important events. Therefore, anomaly detection in drifting time series requires both similarity comparison and temporal context. The AnDri work frames this challenge as anomaly and drift co-detection, where the system must distinguish transient abnormal subsequences from sustained or recurring changes in normal behavior \citep{park2025andri,park2025adaptive}.
+
+\section{Subsequence Similarity and Normal Patterns}
+
+A normal pattern is a representative subsequence or group of subsequences that describes expected behavior in a time series. Many time-series anomaly detection methods compare a new subsequence against known normal patterns and treat large dissimilarity as evidence of abnormality. Similarity is often measured after normalization so that the comparison focuses on shape rather than raw magnitude.
+
+The Matrix Profile is a common tool for subsequence similarity search. It stores, for each subsequence in a time series, the distance to its nearest neighboring subsequence, enabling efficient motif and discord discovery \citep{yeh2016matrix}. In this context, a motif is a repeated normal-looking pattern, while a discord is a subsequence that is far from its nearest neighbor and is therefore a candidate anomaly. This idea is useful background for AnDri because AnDri also relies on comparing subsequences to normal patterns, but extends the setting by considering changing active normal patterns under concept drift.
+
 \section{Active Learning for User Feedback}
 
+In many anomaly detection tasks, complete labels are unavailable because expert annotation is expensive and time-consuming. Active learning addresses this issue by allowing a model to request labels for selected uncertain instances \citep{settles2009active}. Instead of labeling the entire dataset, the user provides feedback on a smaller number of important candidates.
+
+This idea is closely related to human-in-the-loop machine learning, where human expertise is incorporated into the learning or decision-making process through feedback, correction, validation, or annotation \citep{amershi2014power,holzinger2016interactive}. Human-in-the-loop design is especially useful when fully automatic decisions are unreliable because the task requires domain knowledge or contextual judgment. In anomaly detection, this is often the case because an unusual pattern is not always a true anomaly; it may instead represent a legitimate change in normal behavior.
+
+For anomaly detection with concept drift, partial user feedback is valuable because automatic scores alone may not fully determine whether a changed pattern is abnormal or newly normal. A user can confirm true anomalies, reject false positives, or validate candidate normal patterns. The AnDri system follows this general human-in-the-loop idea by enabling users to interactively co-explore anomalies and drift and by using partial labels to improve co-detection accuracy \citep{park2025andri}. In this report, human feedback is therefore treated as an important mechanism for refining anomaly thresholds and improving the distinction between abnormal events and drift-driven normal changes.
