@@ -1,24 +1,190 @@
 \chapter{Methodology}
 
     \fei{You cannot use his work, but have to write in your own words.  If you are going to talk about AnDri which is not your work, then describe this in Background chapter.  Move 3.2 to Background. }
-
     \fei{Describe your methodology using a picture to show what is the problem, and then a picture showing your solution (framework).  This chapter is all about the algorithm details so show using a picture and explain how your algorithm works.  I don't  understand how 3.5 is an algorithm method.}
+    \fei{Why is this interesting as an algorithm?  }
 
-\begin{itemize}
-    \item Andri can detect anomalies and distinguish drifts, and it can also display them intuitively on the web page.  \fei{Why is this interesting as an algorithm?  }
-\end{itemize}
-
-
-\section{Display drift and anomaly}
-
-
+This chapter describes the methodological workflow used in this project to detect anomalies in time series with concept drift. The chapter builds on the prior AnDri method, which provides the dynamic normal-pattern model and the anomaly scoring mechanism \citep{park2025andri,park2025adaptive}. The Adjacent Hierarchical Clustering component is treated as part of the prior AnDri method and is not claimed as an individual contribution of this report. The focus here is the end-to-end detection methodology implemented in the demo system: score generation, normal-pattern-aware thresholding, active-learning-based label refinement, and final anomaly decision making.
 
 \section{Problem Definition}
 
-\section{Anomaly and Drift Co-Detection Framework}
+Let \(T=[x_1,x_2,\ldots,x_n]\) be a univariate time series. A subsequence of length \(\ell\) starting at index \(i\) is denoted by \(T_{i,\ell}=[x_i,x_{i+1},\ldots,x_{i+\ell-1}]\). The goal is to assign each point, or each subsequence represented at a point, a binary anomaly label \(\hat{y}_i \in \{0,1\}\), where \(\hat{y}_i=1\) indicates an anomaly and \(\hat{y}_i=0\) indicates normal behavior.
 
-\section{Limitations of Static Thresholds}
+The difficulty is that normal behavior is not stationary. A region that differs from earlier data may be a true anomaly, but it may also be a new or recurring normal pattern caused by concept drift. Therefore, the detection problem cannot be solved only by comparing every point against one fixed global normal model. The method must decide both whether a point has a high anomaly score and whether that score should be interpreted relative to the correct normal context.
 
-\section{Adaptive Thresholding with Active Learning}
 
-\section{Threshold Update Process}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.98\textwidth,
+    height=6.0cm,
+    xlabel={Time},
+    ylabel={Value},
+    xmin=0, xmax=102,
+    ymin=-1.7, ymax=2.7,
+    axis lines=left,
+    xtick=\empty,
+    ytick=\empty,
+    clip=false,
+    label style={font=\large},
+    tick label style={font=\small}
+]
+
+\addplot[draw=none, fill=blue!7] coordinates {(0,-1.7) (35,-1.7) (35,2.6) (0,2.6)} \closedcycle;
+\addplot[draw=none, fill=orange!10] coordinates {(35,-1.7) (60,-1.7) (60,2.6) (35,2.6)} \closedcycle;
+\addplot[draw=none, fill=green!8] coordinates {(60,-1.7) (100,-1.7) (100,2.6) (60,2.6)} \closedcycle;
+
+\addplot[blue, thick, domain=0:35, samples=160]
+{0.35*sin(deg(0.55*x)) + 0.06*sin(deg(2.7*x))};
+
+\addplot[orange!90!black, thick, domain=35:60, samples=220]
+{0.30*sin(deg(0.55*x))*(1-(x-35)/25) + 0.55*sin(deg(1.1*x))*((x-35)/25) + 0.028*(x-35)};
+
+\addplot[green!55!black, thick, domain=60:100, samples=220]
+{0.55*sin(deg(1.1*x)) + 0.75 + 0.06*sin(deg(3*x))};
+
+\addplot[dashed, gray, thick] coordinates {(0,0.9) (100,0.9)};
+\node[gray, font=\large, anchor=south west] at (axis cs:2,1.10) {fixed global threshold};
+
+\node[blue, font=\large] at (axis cs:17.5,-1.35) {old normal};
+\node[orange!80!black, font=\large] at (axis cs:47.5,-1.35) {drift};
+\node[green!45!black, font=\large] at (axis cs:80,-1.35) {new normal};
+
+\end{axis}
+\end{tikzpicture}
+\caption{Illustration of anomaly detection under concept drift. A sustained change may represent a new normal pattern, even when part of the new pattern exceeds a fixed global threshold.}
+\label{fig:methodology_problem}
+\end{figure}
+
+
+\section{Method Overview}
+
+The implemented workflow has four main stages. First, the system converts the input time series into anomaly scores. For AnDri, this stage also returns the normal pattern associated with each point. Second, the user selects one or more training regions and marks a small number of anomalies. Third, the system estimates anomaly thresholds from the score distribution of the user-labeled points. Fourth, when the score distribution is ambiguous, the system requests additional user feedback for candidate points and updates the threshold iteratively.
+
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}{0.92\textwidth}
+\centering
+\begin{tabular}{c c c c c}
+Time series & \(\rightarrow\) & Score generation & \(\rightarrow\) & User labels \\
+ & & \(s_i \in [0,1]\) & & \(f_i \in \{0,1,2\}\) \\[0.2cm]
+ & & \(\downarrow\) & & \(\downarrow\) \\[0.2cm]
+Normal-pattern groups & \(\rightarrow\) & Adaptive thresholds & \(\rightarrow\) & Final labels
+\end{tabular}
+\end{minipage}}
+\caption{Methodological framework used in the interactive detection workflow. AnDri uses normal-pattern groups to estimate separate thresholds, while baseline methods use a single global threshold.}
+\label{fig:methodology_framework}
+\end{figure}
+
+\section{Anomaly Score Generation}
+
+Each detection method produces a score sequence
+\[
+S=[s_1,s_2,\ldots,s_n],
+\]
+where a larger score indicates stronger evidence of abnormality. In the implementation, scores are normalized to the interval \([0,1]\) so that different methods can be compared under the same thresholding interface.
+
+For AnDri, the backend uses the prior AnDri scoring module to learn normal patterns and compute point-level anomaly scores. Each point is also assigned to a normal pattern index:
+\[
+g(i) \in \{1,2,\ldots,m\},
+\]
+where \(g(i)\) identifies the normal pattern that best explains point \(i\). This mapping is important because different normal patterns may have different score distributions. A score that is high for one normal pattern may be ordinary for another. Therefore, AnDri does not use only one global threshold; it estimates thresholds separately for the normal-pattern groups observed in the selected training regions.
+
+For comparison, NormA, SAND, and DAMP are also integrated into the same workflow \citep{boniol2021norma,boniol2021sand,lu2022damp}. These methods generate normalized anomaly scores, but they do not provide the same dynamic normal-pattern grouping used by AnDri. As a result, the baseline workflow applies one adaptive threshold to the selected training region, while AnDri applies normal-pattern-specific thresholds.
+
+\section{Adaptive Thresholding with User Labels}
+
+The system maintains a label flag \(f_i\) for each point. Initially, most points are unlabeled. A user can mark points as anomalous or normal:
+\[
+f_i =
+\begin{cases}
+0, & \text{unlabeled},\\
+1, & \text{user-marked anomaly},\\
+2, & \text{user-confirmed normal}.
+\end{cases}
+\]
+The purpose of the adaptive thresholding step is to estimate a threshold \(\theta\) from the user-marked anomaly scores. For a global detector, the final decision is
+\[
+\hat{y}_i =
+\begin{cases}
+1, & s_i > \theta,\\
+0, & s_i \leq \theta.
+\end{cases}
+\]
+
+The demo also allows the user to provide an expected anomaly proportion \(\rho\). This value is used to compute a score cutoff \(q_{\rho}\), corresponding to the boundary of the top \(\rho\) percent of scores in the selected training region. This prevents the threshold from becoming too low when only a small number of anomaly labels are provided.
+
+To model the marked anomaly scores, the backend fits a two-component Bayesian Gaussian mixture model:
+\[
+p(s)=\sum_{k=1}^{2}\pi_k \mathcal{N}(s;\mu_k,\sigma_k^2).
+\]
+Only mixture components with weight greater than a small threshold are treated as active. If fewer than two active components remain, the labeled anomaly scores are considered stable, and the threshold is set using both the mixture statistics and the anomaly-proportion cutoff:
+\[
+\theta = \max(q_{\rho}, \mu-\sigma).
+\]
+Here \(\mu\) and \(\sigma\) describe the active anomaly-score component. This rule keeps the threshold high enough to respect the expected anomaly proportion while still adapting to the distribution of user-confirmed anomalies.
+
+
+
+\section{Active Learning for Ambiguous Scores}
+
+When two active Gaussian components are found, the labeled scores are treated as ambiguous. This means the current user labels do not yet separate normal and abnormal score regions clearly. The system then computes the intersection between adjacent Gaussian components:
+\[
+\pi_a \mathcal{N}(x;\mu_a,\sigma_a^2)
+=
+\pi_b \mathcal{N}(x;\mu_b,\sigma_b^2).
+\]
+Scores near this intersection are the most uncertain because the two components assign them similar likelihood. The system searches for unlabeled points in this uncertainty region and asks the user to classify them as anomalies or normal points. To keep the interaction manageable, the implementation limits each review round to at most 20 candidate points. If too many points are found, the uncertainty window is narrowed; if too few are found, it is widened.
+
+The active-learning loop has two correction steps. First, if a point previously marked as an anomaly has a low score below the top-\(\rho\) cutoff, the system asks whether it should be removed from the anomaly set. This catches possible false anomaly labels. Second, the system asks the user to label points near the mixture intersection, because these points have the greatest effect on the threshold. After each feedback round, the mixture model is refit and the threshold is updated. The loop stops when the score distribution becomes stable or when no additional uncertain candidates are found.
+
+\section{Normal-Pattern-Specific Thresholds for AnDri}
+
+The AnDri workflow extends the thresholding procedure by estimating a separate threshold for each normal pattern represented in the training set. Let \(A\) be the set of user-selected training indices. For each normal pattern \(k\), the training indices assigned to that pattern are
+\[
+A_k = \{i \in A \mid g(i)=k\}.
+\]
+The system fits the same Bayesian mixture and active-learning procedure on the scores in \(A_k\), using only the user labels associated with that normal-pattern group. This produces a threshold \(\theta_k\) for normal pattern \(k\).
+
+The final AnDri decision is therefore
+\[
+\hat{y}_i =
+\begin{cases}
+1, & s_i > \theta_{g(i)},\\
+0, & s_i \leq \theta_{g(i)}.
+\end{cases}
+\]
+This design is important under concept drift. If the time series contains several normal regimes, each regime may have a different natural score range. A single global threshold may over-flag a drifting normal region or under-detect anomalies in a lower-variance region. Pattern-specific thresholds allow the decision boundary to follow the changing normal context learned by AnDri.
+
+If a point belongs to a normal pattern that was not present in the user-selected training region, the implementation transfers the threshold from the most similar trained normal pattern. The nearest trained pattern is selected by Euclidean distance between normal-pattern subsequences:
+\[
+k^*=\arg\min_{j \in K_{\text{train}}} \|NM_k-NM_j\|_2,
+\]
+and the missing threshold is assigned as \(\theta_k=\theta_{k^*}\). This fallback allows the system to still make a decision for regions not directly covered by user feedback.
+
+\section{Final Decision Workflow}
+
+The overall methodology can be summarized as follows.
+
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}{0.92\textwidth}
+\textbf{Input:} time series \(T\), selected training regions \(A\), partial user labels, anomaly proportion \(\rho\).\\
+\textbf{Output:} final anomaly labels \(\hat{Y}\).
+
+\begin{enumerate}[leftmargin=*]
+    \item Compute normalized anomaly scores \(S\) for the selected algorithm.
+    \item If the algorithm is AnDri, obtain the normal-pattern assignment \(g(i)\) for each point.
+    \item For each threshold group, either the whole training region for baselines or each normal-pattern group for AnDri, fit a Bayesian Gaussian mixture to user-marked anomaly scores.
+    \item If the score distribution is stable, set the threshold using the larger of the top-\(\rho\) cutoff and the component boundary \(\mu-\sigma\).
+    \item If the score distribution is unstable, select uncertain points near the Gaussian intersection and ask the user to classify them.
+    \item Refit the score model after each feedback round until no unstable group remains.
+    \item Assign final anomaly labels by comparing each score with its corresponding threshold.
+\end{enumerate}
+\end{minipage}}
+\caption{Adaptive thresholding and active-learning procedure used by the demo system.}
+\label{fig:methodology_algorithm}
+\end{figure}
+
+This methodology connects the algorithmic score output with the interactive system workflow. The backend produces normalized scores and, for AnDri, normal-pattern assignments. The frontend uses those values to guide user review, update thresholds, and present final anomaly decisions. In this way, the system does not rely only on a static cutoff. Instead, it uses partial human feedback to adapt the decision boundary and uses AnDri's normal-pattern structure to make the threshold sensitive to concept drift.
