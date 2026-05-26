@@ -2,7 +2,35 @@
 
 \fei{Ths Methodology chapter is all about the algorithm that solves the detection problem, the dynamic threshold adjustment, and gives details on how this is done (using pictures, text and algorithm pseudocode).  This chapter is about the system implementation.}
 
+
+This chapter describes the implementation of the AnDri demonstration system. The system was designed to let a user upload or select a time-series dataset, inspect the data visually, select training regions, mark anomalies, run AnDri and baseline detectors, review uncertain candidates, and compare the final detection results. The implementation work in this chapter focuses on the AnDri system: the web interface, data-handling workflow, backend integration, visualization logic, baseline comparison, and deployment environment.
+
+
 \section{System Overview}
+
+AnDri was implemented as a browser-based interactive system with a Python Flask backend and a JavaScript front-end. This design was chosen because the task is not only to compute anomaly scores, but also to support human interpretation. A user needs to see the full time series, zoom into local regions, mark candidate anomalies, inspect normal patterns, and compare the behavior of multiple algorithms. The web interface provides a convenient way to combine these operations in one workflow.
+
+The system has three main layers. The first layer is the user interface in \texttt{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \texttt{app.py} and the blueprint in \texttt{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \texttt{utils/ml.py} and the \texttt{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD ecosystem, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
+
+
+\begin{table}[H]
+\centering
+\caption{Main implementation components in the AnDri demo repository.}
+\label{tab:implementation_components}
+\begin{tabular}{P{0.25\textwidth} P{0.25\textwidth} P{0.40\textwidth}}
+\toprule
+\textbf{Component} & \textbf{Main files} & \textbf{Role in the system} \\
+\midrule
+Application entry point & \texttt{app.py}, \texttt{wsgi.py} & Creates the Flask application, registers routes, configures request size limits, and exposes the application for local or server execution. \\
+Frontend interface & \texttt{templates/index.html} & Provides the upload modal, training-set selection controls, anomaly-labeling workflow, algorithm tabs, result table, and ECharts visualizations. \\
+API routes & \texttt{blueprints/detect\_anomalies/routes.py} & Defines POST endpoints for AnDri, NormA, SAND, DAMP, similar-pattern search, and user-label fitting. \\
+Scoring integration & \texttt{utils/ml.py} & Converts JSON inputs into NumPy arrays, calls detector implementations, normalizes scores, computes AUC, and returns structured results to the frontend. \\
+AnDri method module & \texttt{algorithms/andri/} & Contains the broader AnDri implementation, including normal-pattern learning, pattern management, scoring utilities, and AHC-related code. \\
+Example datasets & \texttt{static/datasets/} & Provides ECG, electricity, and weather time-series examples for testing the interface. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \section{System Architecture}
 
