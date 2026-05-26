@@ -62,21 +62,6 @@ The difficulty is that normal behavior is not stationary. A region that differs 
 
 The implemented workflow has four main stages. First, the system converts the input time series into anomaly scores. For AnDri, this stage also returns the normal pattern associated with each point. Second, the user selects one or more training regions and marks a small number of anomalies. Third, the system estimates anomaly thresholds from the score distribution of the user-labeled points. Fourth, when the score distribution is ambiguous, the system requests additional user feedback for candidate points and updates the threshold iteratively.
 
-\begin{figure}[H]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\begin{tabular}{c c c c c}
-Time series & \(\rightarrow\) & Score generation & \(\rightarrow\) & User labels \\
- & & \(s_i \in [0,1]\) & & \(f_i \in \{0,1,2\}\) \\[0.2cm]
- & & \(\downarrow\) & & \(\downarrow\) \\[0.2cm]
-Normal-pattern groups & \(\rightarrow\) & Adaptive thresholds & \(\rightarrow\) & Final labels
-\end{tabular}
-\end{minipage}}
-\caption{Methodological framework used in the interactive detection workflow. AnDri uses normal-pattern groups to estimate separate thresholds, while baseline methods use a single global threshold.}
-\label{fig:methodology_framework}
-\end{figure}
-
 
 \section{Anomaly Score Generation}
 
