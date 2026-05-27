@@ -13,14 +13,70 @@ AnDri was implemented as a browser-based interactive system with a Python Flask 
 The system has three main layers. The first layer is the user interface in \texttt{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \texttt{app.py} and the blueprint in \texttt{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \texttt{utils/ml.py} and the \texttt{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD ecosystem, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
 
 \begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\footnotesize,
+    layer/.style={
+        rectangle,
+        draw,
+        rounded corners,
+        align=center,
+        minimum width=0.72\textwidth,
+        minimum height=1.35cm,
+        text width=0.66\textwidth
+    },
+    arrow/.style={-{Latex}, thick}
+]
+
+\node[layer, fill=blue!8, draw=blue!60] (frontend)
+{\textbf{Layer 1: Front-End Interface}\\
+\texttt{templates/index.html}; JavaScript; ECharts;\\
+upload, labeling, review, and comparison views};
+
+\node[layer, fill=green!8, draw=green!50!black, below=1.6cm of frontend] (api)
+{\textbf{Layer 2: Flask API Layer}\\
+\texttt{app.py}; \texttt{blueprints/detect\_anomalies/routes.py};\\
+HTTP/JSON routes for scoring, label fitting, and pattern search};
+
+\node[layer, fill=orange!10, draw=orange!70!black, below=1.6cm of api] (scoring)
+{\textbf{Layer 3: Detection and Scoring Layer}\\
+\texttt{utils/ml.py}; \texttt{algorithms/andri/};\\
+AnDri scoring, baseline integration, and normal-pattern output};
+
+\draw[arrow] ([xshift=-0.8cm]frontend.south) --
+    node[right, xshift=-0.15cm, text width=2.8cm, align=right, font=\small]
+    {requests and user state}
+    ([xshift=-0.8cm]api.north);
+
+\draw[arrow] ([xshift=-0.8cm]api.south) --
+    node[right, xshift=-0.15cm, text width=2.8cm, align=right, font=\small]
+    {Python Computation}
+    ([xshift=-0.8cm]scoring.north);
+
+\draw[arrow] ([yshift=-0.25cm]scoring.east) -- ++(1,0)
+    node[pos=0.65, right, xshift=0.6cm, yshift=1.5cm, text width=2.8cm, align=left, font=\small]
+    {scores, patterns, and metrics}
+    |- ([yshift=-0.25cm]api.east);
+
+\draw[arrow] ([yshift=0.25cm]api.east) -- ++(1,0)
+    node[pos=0.25, right, xshift=0.9cm, yshift=1.5cm, text width=2.8cm, align=left, font=\small]
+    {JSON responses}
+    |- ([yshift=0.25cm]frontend.east);
+    
+\end{tikzpicture}
+\caption{Three-layer implementation structure.}
+\label{fig:three_layer_architecture}
+\end{figure}
+
+
+\noindent The implemented architecture separates interaction, routing, and computation. The browser is responsible for the interactive workflow and most visual state. It reads the selected dataset, stores the time-series values, labels, user-selected training intervals, current flags, and threshold state, and renders all charts. The backend is responsible for computational work such as running AnDri and baseline detectors, fitting the Bayesian Gaussian mixture model for user labels, computing AUC values, and finding similar normal patterns using time-series similarity search.
+
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/architecture.png}
     \caption{Overall workflow and architecture of the AnDri demo system. The system combines dataset loading, training-set selection, anomaly labeling, score computation, active-learning-based review, and final anomaly/drift comparison.}
     \label{fig:system_architecture}
 \end{figure}
-
-
-The implemented architecture separates interaction, routing, and computation. The browser is responsible for the interactive workflow and most visual state. It reads the selected dataset, stores the time-series values, labels, user-selected training intervals, current flags, and threshold state, and renders all charts. The backend is responsible for computational work such as running AnDri and baseline detectors, fitting the Bayesian Gaussian mixture model for user labels, computing AUC values, and finding similar normal patterns using time-series similarity search.
 
 This architecture keeps the backend stateless. Each detection request sends the current data array, user flags, selected training areas, hyperparameters, and baseline labels to the server. The server computes scores or label-refinement information and returns the result to the browser. This avoids the need for a database or persistent server-side session state in the demo version. It also makes the interface easier to reset and repeat with different algorithms, because front-end states are stored in JavaScript arrays during the active browser session.
 
@@ -98,29 +154,27 @@ The system reports four evaluation values in the interface: precision, recall, F
 Figure~\ref{fig:andri_result} shows the final result comparison page. The left side summarizes quantitative results and experiment parameters. The right side compares representative anomaly and drift regions across AnDri, NormA, SAND, and DAMP. This page is important because it connects numerical evaluation with visual explanation. Users can inspect not only which method obtains a better score, but also where the methods disagree and how drift can lead to false positives.
 
 
-
 \section{Deployment and Runtime Environment}
-The system was implemented as a browser-based interactive application with a  Python Flask backend. According to the current project repository, the recommended runtime is Python 3.9.0. The backend depends on scientific Python libraries for numerical processing, time-series transformation, anomaly scoring, clustering, and adaptive threshold estimation. Important dependencies include Flask for the web server, NumPy and pandas for data handling, scikit-learn and SciPy for modeling utilities, and time-series libraries such as STUMPY, TSB-UAD. The front-end is composed of standard web technologies, including HTML, CSS, and JavaScript, and is responsible for displaying the uploaded time series, visualizing candidate anomalies and drift regions, and collecting user feedback for active learning. The front-end and backend communicate through HTTP requests using structured data formats such as JSON, which allows the browser to update the visualization without restarting the analysis session.
 
-The application entry point is the Flask application defined in \texttt{app.py}. At startup, the application creates the Flask instance, registers the backend blueprints, sets a maximum upload size for large time-series files, and serves the main interface through the root route. The latest repository also checks whether the optional NORMA implementation exists under \texttt{algorithms/norma/norma.py}. This is necessary because the NORMA implementation is not included directly in the repository, while the remaining
-algorithms can still be used without it. Because the author of the normA algorithm did not agree to make the code public, using the normA algorithm requires applying directly to the original author. This design allows the same interface to support different baseline algorithms depending on which optional components are available in the runtime environment.
+The system was implemented as a browser-based interactive application with a Python Flask backend. According to the current project repository, the recommended runtime is Python 3.9.0. The backend depends on scientific Python libraries for numerical processing, time-series transformation, anomaly scoring, clustering, and adaptive threshold estimation. Important dependencies include Flask for the web server, NumPy and pandas for data handling, scikit-learn and SciPy for modeling utilities, and time-series libraries such as STUMPY and TSB-UAD. The front-end is composed of standard web technologies, including HTML, CSS, JavaScript, and ECharts, and is responsible for displaying the uploaded time series, visualizing candidate anomalies and drift regions, and collecting user feedback for active learning.
 
-For local execution, the user first creates a Python virtual environment, installs the dependencies listed in \texttt{requirements.txt}, and starts the Flask server using \texttt{python app.py}. Once the server is running, the system is available in a browser at \texttt{http://localhost:5000/}. The user
-can then choose an example dataset from the static dataset folder or upload a new supported time-series file. The backend validates the uploaded data, parses the time-series values, preprocesses the data, and executes the anomaly and drift co-detection procedure. The results are returned to the frontend, where
-the time series, candidate anomalies, drift regions, and summary statistics are rendered for inspection.
+In addition to local execution, the system was deployed on a school server. The main motivation for this deployment was practical accessibility. If the project only runs locally, each user must clone the repository, create a Python environment, install dependencies, obtain optional algorithm files, and start the Flask server manually. This is inconvenient for supervisors, classmates, or other students who may want to inspect the demo only through a browser. By deploying AnDri on a shared server, the system becomes easier for other people in the school to access, test, and discuss without repeating the full setup process.
 
-The runtime workflow is interactive rather than a one-time batch process. After the initial results are displayed, the user can select training regions, mark anomalous points, remove incorrect labels, or repeat the workflow with other algorithms. Each feedback action is sent back to the Flask backend, which
-updates the corresponding threshold or algorithm state and returns revised results to the browser. This interaction is important for AnDri because the system is designed to support anomaly and drift co-exploration, not only to produce a static list of detected points.
+The deployment also served as a software engineering learning experience. Building the local demo required integrating algorithms, data processing, and visualization; deploying it required understanding a different set of engineering concerns, including web-server configuration, reverse proxy, static-resource handling, dependency management, request-size limits, file permissions, server paths, and runtime logs. These are important practical skills because a research prototype becomes more useful when it can be executed reliably outside the developer's local machine.
 
+The application entry point is the Flask application defined in \textbf{app.py}. At startup, the application creates the Flask instance, registers the backend blueprints, sets a maximum upload size for large time-series files, and serves the main interface through the root route. The latest repository also checks whether the optional NormA implementation exists under \textbf{algorithms/norma/norma.py}. This is necessary because the NormA implementation is not included directly in the repository, while the remaining algorithms can still be used without it. This design allows the same interface to support different baseline algorithms depending on which optional components are available in the runtime environment.
 
-Although the current repository documents local Flask execution, the same system can be deployed on a server by placing the Flask application behind a production web-server configuration. Figure~\ref{fig:deployment_runtime} illustrates this server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX can serve static frontend resources directly and forward dynamic requests to the Python application process managed by an application server such as Gunicorn.
+For local execution, the user first creates a Python virtual environment, installs the dependencies listed in \textbf{requirements.txt}, and starts the Flask server using \textbf{python app.py}. Once the server is running, the system is available in a browser at \textbf{http://localhost:5000/}. The user can then choose an example dataset from the static dataset folder or upload a new supported time-series file. The browser parses the time-series values and labels, initializes the visualization, and sends structured JSON requests to the backend when an algorithm or threshold-refinement step is executed.
+
+The runtime workflow is interactive rather than a one-time batch process. After the initial results are displayed, the user can select training regions, mark anomalous points, remove incorrect labels, or repeat the workflow with other algorithms. Each feedback action updates the browser-side state and, when necessary, sends a request back to the Flask backend. The backend computes revised scores, fitted label distributions, or similar-pattern matches and returns the results to the browser. This interaction is important for AnDri because the system is designed to support anomaly and drift co-exploration, not only to produce a static list of detected points.
+
+Although the current repository documents local Flask execution, the same system can be deployed on a server by placing the Flask application behind a production web-server configuration. Figure~\ref{fig:deployment_runtime} illustrates this server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX is commonly used as an HTTP server and reverse proxy, and it can also serve static resources efficiently \citep{nginx}. Dynamic requests are forwarded to the Python application process managed by Gunicorn, a Python WSGI HTTP server that can run Flask applications in a production-style environment \citep{gunicorn,flask}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/deploy.png}
-    \caption{Deployment runtime architecture}
+    \caption{Deployment runtime architecture. Browser requests are handled by NGINX, forwarded to Gunicorn, and then processed by the Python web application layer.}
     \label{fig:deployment_runtime}
 \end{figure}
 
-
-This separation is useful because static files can be handled and cached independently, while computational requests such as dataset uploading, anomaly detection, label submission, and threshold recalculation are processed by the backend. A server deployment also requires more careful management of package versions, file permissions, upload limits, static-resource paths, and runtime logs. These considerations are important because AnDri is not only an offline algorithmic prototype; it is also an interactive system in which usability, response time, and reproducible execution affect how effectively users can inspect anomalies and concept drift.
+This separation is useful because static files can be handled and cached independently, while computational requests such as dataset loading, anomaly detection, label submission, threshold recalculation, and similar-pattern search are processed by the backend. A server deployment also requires more careful management of package versions, file permissions, upload limits, static-resource paths, process restarts, and runtime logs.
