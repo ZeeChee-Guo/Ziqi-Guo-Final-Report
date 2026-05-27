@@ -66,26 +66,6 @@ The front-end uses a flag array to track the state of each time-series point. Th
 \section{Backend Architecture}
 The backend is implemented in Flask. The root route in \textbf{app.py} creates the main page and checks whether the optional NormA implementation exists under \textbf{algorithms/norma/norma.py}. This check is necessary because the NormA source file is not included directly in the repository. To use the source file, the user must get it from the author. The system can still run AnDri, SAND, and DAMP without the optional NormA file, while the interface can warn the user if NormA is selected without the required external implementation.
 
-The detection routes are grouped under the \textbf{/detect-anomalies} prefix. The main endpoints are summarized in Table~\ref{tab:implementation_endpoints}.
-% \begin{table}[H]
-% \centering
-% \caption{Backend API endpoints used by the interactive workflow.}
-% \label{tab:implementation_endpoints}
-% \begin{tabular}{P{0.28\textwidth} P{0.62\textwidth}}
-% \toprule
-% \textbf{Endpoint} & \textbf{Purpose} \\
-% \midrule
-% \texttt{/detect-anomalies/andri} & Runs the AnDri scorer and returns normalized scores, normal-pattern subsequences, normal-pattern indices, parameters, and AUC. \\
-% \texttt{/detect-anomalies/norm\_a} & Runs NormA when the optional implementation is available and returns normalized scores, normal patterns, weights, and AUC. \\
-% \texttt{/detect-anomalies/sand} & Runs SAND from TSB-UAD using the selected training regions and returns scores, clusters, weights, parameters, and AUC. \\
-% \texttt{/detect-anomalies/damp} & Runs DAMP from TSB-UAD and returns scores, parameter values, and AUC. \\
-% \texttt{/detect-anomalies/norm\_a\_fit\_user\_labels} & Fits the user-marked anomaly scores with a Bayesian Gaussian mixture model and returns stability, uncertain points, distribution parameters, and weights. \\
-% \texttt{/detect-anomalies/find\_similar\_pattern} & Finds the normal pattern most similar to a selected candidate sequence for visualization. \\
-% \texttt{/detect-anomalies/find\_similar\_anomaly\_pattern} & Finds a comparable pattern for candidate anomaly visualization. \\
-% \bottomrule
-% \end{tabular}
-% \end{table}
-
 The backend receives JSON format data for each analysis request. For the detector endpoints, the JSON content includes the time-series values, current flags, training-set ranges, hyperparameters, and baseline labels. The backend converts these values into NumPy arrays, runs the selected detector, normalizes scores to the range \([0,1]\), and returns lists that can be rendered directly by the front-end.
 
 The scoring functions in \textbf{utils/ml.py} are designed as wrappers around the underlying detector implementations. For AnDri, the wrapper constructs an \textbf{AnDri} object, calls its \textbf{fit} method, extracts the score sequence, extracts normal-pattern subsequences, and returns the normal-pattern index associated with each point. For SAND and DAMP, the wrappers call the corresponding TSB-UAD models and normalize their decision scores. For NormA, the wrapper imports the optional external implementation and raises a clear error if it is unavailable.
@@ -133,27 +113,14 @@ The runtime workflow is interactive rather than a one-time batch process. After 
 updates the corresponding threshold or algorithm state and returns revised results to the browser. This interaction is important for AnDri because the system is designed to support anomaly and drift co-exploration, not only to produce a static list of detected points.
 
 
-Although the current repository documents local Flask execution, the same system
-can be deployed on a server by placing the Flask application behind a production
-web-server configuration. Figure~\ref{fig:deployment_runtime} illustrates this
-server-side deployment pattern. In this architecture, browser requests first
-reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX
-can serve static frontend resources directly and forward dynamic requests to the
-Python application process managed by an application server such as Gunicorn.
+Although the current repository documents local Flask execution, the same system can be deployed on a server by placing the Flask application behind a production web-server configuration. Figure~\ref{fig:deployment_runtime} illustrates this server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX can serve static frontend resources directly and forward dynamic requests to the Python application process managed by an application server such as Gunicorn.
 
-\begin{center}
+\begin{figure}[H]
+    \centering
     \includegraphics[width=0.85\textwidth]{figures/deploy.png}
-    \captionof{figure}{Deployment runtime architecture for the server version of AnDri. NGINX acts as the public web server and reverse proxy, while Gunicorn forwards dynamic requests to the Python web application layer.}
+    \caption{Deployment runtime architecture}
     \label{fig:deployment_runtime}
-\end{center}
+\end{figure}
 
 
-This separation is useful because static files can be handled and cached
-independently, while computational requests such as dataset uploading, anomaly
-detection, label submission, and threshold recalculation are processed by the
-backend. A server deployment also requires more careful management of package
-versions, file permissions, upload limits, static-resource paths, and runtime
-logs. These considerations are important because AnDri is not only an offline
-algorithmic prototype; it is also an interactive system in which usability,
-response time, and reproducible execution affect how effectively users can
-inspect anomalies and concept drift.
+This separation is useful because static files can be handled and cached independently, while computational requests such as dataset uploading, anomaly detection, label submission, and threshold recalculation are processed by the backend. A server deployment also requires more careful management of package versions, file permissions, upload limits, static-resource paths, and runtime logs. These considerations are important because AnDri is not only an offline algorithmic prototype; it is also an interactive system in which usability, response time, and reproducible execution affect how effectively users can inspect anomalies and concept drift.
