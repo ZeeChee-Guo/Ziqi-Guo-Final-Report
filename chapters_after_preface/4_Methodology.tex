@@ -6,56 +6,122 @@
 
 This chapter describes the methodological workflow used in this project to detect anomalies in time series with concept drift. The chapter builds on the prior AnDri method, which provides the dynamic normal-pattern model and the anomaly scoring mechanism \citep{park2025andri,park2025adaptive}. The Adjacent Hierarchical Clustering component is treated as part of the prior AnDri method and is not claimed as an individual contribution of this report. The focus here is the end-to-end detection methodology implemented in the demo system: score generation, normal-pattern-aware thresholding, active-learning-based label refinement, and final anomaly decision making.
 
+
 \section{Problem Definition}
 
-Let \(T=[x_1,x_2,\ldots,x_n]\) be a univariate time series. A subsequence of length \(\ell\) starting at index \(i\) is denoted by \(T_{i,\ell}=[x_i,x_{i+1},\ldots,x_{i+\ell-1}]\). The goal is to assign each point, or each subsequence represented at a point, a binary anomaly label \(\hat{y}_i \in \{0,1\}\), where \(\hat{y}_i=1\) indicates an anomaly and \(\hat{y}_i=0\) indicates normal behavior.
+Let \(T=[x_1,x_2,\ldots,x_n]\) be a uni-variate time series, where \(x_i\) is the observed value at time index \(i\). The goal of anomaly detection is to decide whether each time point is normal or anomaly. Instead of making this decision directly from the raw value \(x_i\), an anomaly detection method first assigns each time point an anomaly score \(s_i\). A larger score means that the point is more suspicious.
 
-The difficulty is that normal behavior is not stationary. A region that differs from earlier data may be a true anomaly, but it may also be a new or recurring normal pattern caused by concept drift. Therefore, the detection problem cannot be solved only by comparing every point against one fixed global normal model. The method must decide both whether a point has a high anomaly score and whether that score should be interpreted relative to the correct normal context.
+The detector therefore transforms the original time series into a point-level anomaly-score sequence:
+\[S=[s_1,s_2,\ldots,s_n].\]
+Here, every point \(i\) has its own anomaly score \(s_i\), and these scores are arranged in the same temporal order as the original observations. In the Andri system interface, this score sequence is visualized as an anomaly-score curve below the original time-series plot.
 
+Although the final score is represented at the point level, many time-series anomaly detection methods compute this score using local temporal context. Given a window length \(\ell\), a local subsequence starting at index \(i\) can be written as
+\[T_{i,\ell}=[x_i,x_{i+1},\ldots,x_{i+\ell-1}].\]
+A method may compare this local subsequence with learned normal patterns and then assign the resulting score to the corresponding point or time region. This is important because many anomalies are not visible from one isolated value, but from the shape of a short interval.
+
+After the anomaly scores are generated, the final binary anomaly label is obtained by applying a threshold:
+\[
+\hat{y}_i =
+\begin{cases}
+1, & \text{if } s_i > \theta,\\
+0, & \text{otherwise,}
+\end{cases}
+\]
+where \(\hat{y}_i=1\) means that point \(i\) is predicted as anomaly, and \(\hat{y}_i=0\) means that it is predicted as normal point. This workflow is common in time-series anomaly detection. Baseline methods such as NormA, SAND, and DAMP can produce anomaly scores, but their final anomaly labels still depend on how the threshold is selected.
+
+Choosing this threshold is difficult when concept drift is present. A fixed global threshold may work in one part of the time series but fail in another part after the normal behavior changes. If the threshold is too low, drift-driven normal behavior may be incorrectly marked as anomalous. If the threshold is too high, true anomalies may be missed. Therefore, the problem is not only how to compute anomaly scores, but also how to interpret and calibrate these scores under changing normal patterns.
+
+AnDri addresses this problem by supporting interactive threshold adjustment. The user can inspect candidate anomalous points, provide feedback, and refine the threshold used to convert anomaly scores into final labels. This feedback process is not limited to AnDri's own scoring method. In the demo system, baseline methods such as NormA, SAND, and DAMP can also generate point-level anomaly scores, and the user can still participate in the feedback process to adjust the threshold before final predictions are produced.
+
+Figure~\ref{fig41} illustrates this problem formulation. The upper plot shows the original time series. The lower plot shows the anomaly score assigned to each time point. The threshold is applied to the anomaly-score curve, not directly to the raw time-series values.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-    width=0.98\textwidth,
-    height=6.0cm,
-    xlabel={Time},
-    ylabel={Value},
-    xmin=0, xmax=102,
-    ymin=-1.7, ymax=2.7,
+    name=rawseries,
+    width=0.95\textwidth,
+    height=4.2cm,
+    xmin=0, xmax=100,
+    ymin=-1.6, ymax=2.4,
     axis lines=left,
     xtick=\empty,
     ytick=\empty,
-    clip=false,
+    ylabel={Value},
+    title={Original time series},
     label style={font=\large},
-    tick label style={font=\small}
+    title style={font=\large}
 ]
 
-\addplot[draw=none, fill=blue!7] coordinates {(0,-1.7) (35,-1.7) (35,2.6) (0,2.6)} \closedcycle;
-\addplot[draw=none, fill=orange!10] coordinates {(35,-1.7) (60,-1.7) (60,2.6) (35,2.6)} \closedcycle;
-\addplot[draw=none, fill=green!8] coordinates {(60,-1.7) (100,-1.7) (100,2.6) (60,2.6)} \closedcycle;
 
-\addplot[blue, thick, domain=0:35, samples=160]
-{0.35*sin(deg(0.55*x)) + 0.06*sin(deg(2.7*x))};
+\def\series{0.45*sin(deg(0.35*x))+ 0.20*sin(deg(1.4*x))+ 1.2*exp(-0.15*(x-50)^2)}
 
-\addplot[orange!90!black, thick, domain=35:60, samples=220]
-{0.30*sin(deg(0.55*x))*(1-(x-35)/25) + 0.55*sin(deg(1.1*x))*((x-35)/25) + 0.028*(x-35)};
+\addplot[
+    blue,
+    thick,
+    domain=0:46,
+    samples=150
+]
+{\series};
 
-\addplot[green!55!black, thick, domain=60:100, samples=220]
-{0.55*sin(deg(1.1*x)) + 0.75 + 0.06*sin(deg(3*x))};
 
-\addplot[dashed, gray, thick] coordinates {(0,0.9) (100,0.9)};
-\node[gray, font=\large, anchor=south west] at (axis cs:2,1.10) {fixed global threshold};
+\addplot[
+    red,
+    thick,
+    domain=46:54,
+    samples=120
+]
+{\series};
 
-\node[blue, font=\large] at (axis cs:17.5,-1.35) {old normal};
-\node[orange!80!black, font=\large] at (axis cs:47.5,-1.35) {drift};
-\node[green!45!black, font=\large] at (axis cs:80,-1.35) {new normal};
+\addplot[
+    blue,
+    thick,
+    domain=54:100,
+    samples=150
+]
+{\series};
+
+\node[
+    red!80!black,
+    font=\small
+] at (axis cs:56,1.85)
+{Anomalies};
 
 \end{axis}
+
+\begin{axis}[
+    name=scoreseries,
+    at={(rawseries.south west)},
+    yshift=-4.8cm,
+    anchor=north west,
+    width=0.95\textwidth,
+    height=4.2cm,
+    xmin=0, xmax=100,
+    ymin=0, ymax=1.8,
+    axis lines=left,
+    xlabel={Index},
+    ylabel={Anomaly score},
+    xtick=\empty,
+    ytick=\empty,
+    title={Anomaly-score curve},
+    label style={font=\large},
+    title style={font=\large}
+]
+\addplot[black, thick, domain=0:100, samples=260]
+{0.25 + 0.08*sin(deg(0.25*x)) + 1.05*exp(-0.08*(x-50)^2)};
+
+\addplot[dashed, red!70!black, thick] coordinates {(0,0.85) (100,0.85)};
+
+\node[red!70!black, font=\small, anchor=south west] at (axis cs:2,0.88) {threshold \(\theta\)};
+\node[red!80!black, font=\small] at (axis cs:50,1.45) {\(s_i > \theta\)};
+\end{axis}
+
 \end{tikzpicture}
-\caption{Illustration of anomaly detection under concept drift.}
+\caption{ Each point in the original time series is assigned an anomaly score, and the threshold is applied to the anomaly-score curve to obtain final anomaly labels.}
 \label{fig41}
 \end{figure}
+
+
 
 
 \section{Method Overview}

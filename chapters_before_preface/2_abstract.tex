@@ -1,3 +1,9 @@
 \prefacesection{Abstract}
 
-Abstract here (no more than 300 words)
+Time-series anomaly detection is difficult when the distribution of data changes over time. In real applications such as electrocardiogram monitoring, electricity consumption analysis, and weather observation, unusual patterns may indicate true abnormal events, but they may also reflect concept drift, where the normal data distribution evolves. Treating drift as anomaly can create many false alarms, while adapting too quickly can cause true anomalies to be missed.
+
+This report presents AnDri, a system for anomaly and drift co-detection in uni-variate time-series data. The report explains the problem background, related work, methodology, implementation, experiments, and deployment process. AnDri builds on a dynamic normal-pattern model that compares time-series subsequences against currently relevant normal patterns instead of relying on a single fixed normal baseline. The system also supports adaptive thresholding with human feedback, allowing users to review uncertain candidates and refine anomaly decisions.
+
+My individual contribution focuses on the surrounding AnDri demonstration system rather than the Adjacent Hierarchical Clustering component, which is treated as part of the prior AnDri method. The implemented system includes a Flask backend, a JavaScript and ECharts-based front-end, dataset upload and preprocessing, interactive training-region selection, anomaly labeling, candidate review, baseline comparison, result visualization, and server deployment. The system integrates AnDri with baseline methods including NormA, SAND, and DAMP.
+
+Experiments on an ECG dataset show that the system achieves stronger overall anomaly-detection performance than the baselines, with the best recall, F1-score, and AUC in the reported comparison. The visual case study further demonstrates that AnDri can reduce confusion between true anomalies and drift-driven normal pattern changes.
