@@ -42,7 +42,7 @@
 \usepackage{gscale_thesis_doublespace} % Double spaced thesis
 
 \usepackage{setspace}                           % Allows double spacing but skips headers/footers
-\include{definitions}                                % LaTeX variables for preface pages/headers
+
 \setcounter{tocdepth}{1}                        % Limits the TOC to chapter and section names
 
 % Additional packages
@@ -75,15 +75,17 @@
 %----------------- Document Begins ------------------
 \begin{document}
 
+\include{definitions}                                % LaTeX variables for preface pages/headers
+
 %--------------------Before Preface-------------------------
 \beforepreface                                         % Half title page, title page, declaration page   
-  \include{chapters_before_preface/1_lay_abstract}                                  % Lay Abstract
+  % \include{chapters_before_preface/1_lay_abstract}                                  % Lay Abstract
   \include{chapters_before_preface/2_abstract}                                      % Abstract
-  \include{chapters_before_preface/3_dedication}                                      % Dedication
+  % \include{chapters_before_preface/3_dedication}                                      % Dedication
   \include{chapters_before_preface/4_acknowledgements}                 % Acknowledgements
-  \referencepageswithnotations{notation} % Table of Contents, List of Figures, List of Tables, Notations
-    %\referencepages % No notations version (choose one)???
-  \include{chapters_before_preface/6_declaration_of_academic_achievement}  % declaration of Academic Achievement
+  % \referencepageswithnotations{notation} % Table of Contents, List of Figures, List of Tables, Notations
+    \referencepages % No notations version (choose one)???
+  % \include{chapters_before_preface/6_declaration_of_academic_achievement}  % declaration of Academic Achievement
 
 % add your new chapters here according to your text file name
 %--------------------After Preface-------------------------

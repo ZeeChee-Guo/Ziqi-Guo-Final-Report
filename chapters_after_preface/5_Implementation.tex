@@ -10,7 +10,7 @@ This chapter describes the implementation of the AnDri demonstration system. The
 
 AnDri was implemented as a browser-based interactive system with a Python Flask backend and a JavaScript front-end. This design was chosen because the task is not only to compute anomaly scores, but also to support human interpretation. A user needs to see the full time series, zoom into local regions, mark candidate anomalies, inspect normal patterns, and compare the behavior of multiple algorithms. The web interface provides a convenient way to combine these operations in one workflow.
 
-The system has three main layers. The first layer is the user interface in \texttt{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \texttt{app.py} and the blueprint in \texttt{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \texttt{utils/ml.py} and the \texttt{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD ecosystem, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
+The system has three main layers. The first layer is the user interface in \textbf{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \textbf{app.py} and the blueprint in \textbf{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \textbf{utils/ml.py} and the \textbf{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD ecosystem, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
 
 \begin{figure}[H]
 \centering
@@ -65,7 +65,7 @@ AnDri scoring, baseline integration, and normal-pattern output};
     
 \end{tikzpicture}
 \caption{Three-layer implementation structure.}
-\label{fig:three_layer_architecture}
+\label{fig51}
 \end{figure}
 
 
@@ -74,8 +74,8 @@ AnDri scoring, baseline integration, and normal-pattern output};
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/architecture.png}
-    \caption{Overall workflow and architecture of the AnDri demo system. The system combines dataset loading, training-set selection, anomaly labeling, score computation, active-learning-based review, and final anomaly/drift comparison.}
-    \label{fig:system_architecture}
+    \caption{Overall workflow and architecture of the AnDri demo system.}
+    \label{fig52}
 \end{figure}
 
 This architecture keeps the backend stateless. Each detection request sends the current data array, user flags, selected training areas, hyperparameters, and baseline labels to the server. The server computes scores or label-refinement information and returns the result to the browser. This avoids the need for a database or persistent server-side session state in the demo version. It also makes the interface easier to reset and repeat with different algorithms, because front-end states are stored in JavaScript arrays during the active browser session.
@@ -92,17 +92,17 @@ The implementation uses Apache ECharts for browser-side rendering \citep{apachee
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.82\textwidth]{figures/uploadDataset.png}
-    \caption{Dataset upload interface. The user can choose an example dataset or upload a local .arff or .csv file, and can specify the maximum anomaly proportion.}
-    \label{fig:upload_dataset}
+    \caption{Dataset upload interface.}
+    \label{fig54}
 \end{figure}
 
-Figure~\ref{fig:select_training_set} shows the training-set selection stage. The left panel records the selected training intervals and the number of training points. The right panel displays both the global view and the local view, allowing the user to select regions that represent normal behavior or regions where additional labels should be collected.
+Figure~\ref{fig55} shows the training-set selection stage. The left panel records the selected training intervals and the number of training points. The right panel displays both the global view and the local view, allowing the user to select regions that represent normal behavior or regions where additional labels should be collected.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/selectTrainingSet2.png}
-    \caption{Training-set selection interface. The upper chart preserves the full time-series context, while the lower chart allows the user to zoom, scroll, and resize selected training regions.}
-    \label{fig:select_training_set}
+    \caption{Training-set selection interface.}
+    \label{fig55}
 \end{figure}
 
 After selecting training regions, the user starts to label the anomalies. The interface allows the user to drag over the detailed chart to mark sequential anomaly regions. The selected anomalies are stored as labels in the browser-side flag array. The system can then use these labels to estimate an initial decision threshold and to identify candidate points that require further review.
@@ -113,8 +113,8 @@ Then the user will be asked to classify uncertain candidates as anomalies or nor
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/markMoreLabels.png}
-    \caption{Candidate review interface. The system displays candidate anomalies, the corresponding anomaly score distribution, the threshold, and the relationship between candidate regions and learned normal patterns.}
-    \label{fig:candidate_review}
+    \caption{Candidate review interface.}
+    \label{fig56}
 \end{figure}
 
 The front-end uses a flag array to track the state of each time-series point. The main states include unlabeled points, user-marked anomalies, user-confirmed normal points, possible mislabeled points, and system-suggested candidate anomalies. This flag-based design gives the users a simple way to update charts after each user action. For example, when the user confirms a candidate as normal, the point's flag is changed, the chart layers are redrawn, and the threshold-fitting request can be repeated using the updated labels.
@@ -147,11 +147,11 @@ The system reports four evaluation values in the interface: precision, recall, F
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/andri_result.png}
-    \caption{Final comparison interface. The system displays precision, recall, F1-score, selected parameters, comparative anomaly regions, and false-positive correction examples for AnDri and baseline methods.}
-    \label{fig:andri_result}
+    \caption{Final comparison interface.}
+    \label{fig57}
 \end{figure}
 
-Figure~\ref{fig:andri_result} shows the final result comparison page. The left side summarizes quantitative results and experiment parameters. The right side compares representative anomaly and drift regions across AnDri, NormA, SAND, and DAMP. This page is important because it connects numerical evaluation with visual explanation. Users can inspect not only which method obtains a better score, but also where the methods disagree and how drift can lead to false positives.
+Figure~\ref{fig57} shows the final result comparison page. The left side summarizes quantitative results and experiment parameters. The right side compares representative anomaly and drift regions across AnDri, NormA, SAND, and DAMP. This page is important because it connects numerical evaluation with visual explanation. Users can inspect not only which method obtains a better score, but also where the methods disagree and how drift can lead to false positives.
 
 
 \section{Deployment and Runtime Environment}
@@ -168,13 +168,13 @@ For local execution, the user first creates a Python virtual environment, instal
 
 The runtime workflow is interactive rather than a one-time batch process. After the initial results are displayed, the user can select training regions, mark anomalous points, remove incorrect labels, or repeat the workflow with other algorithms. Each feedback action updates the browser-side state and, when necessary, sends a request back to the Flask backend. The backend computes revised scores, fitted label distributions, or similar-pattern matches and returns the results to the browser. This interaction is important for AnDri because the system is designed to support anomaly and drift co-exploration, not only to produce a static list of detected points.
 
-Although the current repository documents local Flask execution, the same system can be deployed on a server by placing the Flask application behind a production web-server configuration. Figure~\ref{fig:deployment_runtime} illustrates this server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX is commonly used as an HTTP server and reverse proxy, and it can also serve static resources efficiently \citep{nginx}. Dynamic requests are forwarded to the Python application process managed by Gunicorn, a Python WSGI HTTP server that can run Flask applications in a production-style environment \citep{gunicorn,flask}.
+Although the current repository documents local Flask execution, the same system can be deployed on a server by placing the Flask application behind a production web-server configuration. Figure~\ref{fig58} illustrates this server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX is commonly used as an HTTP server and reverse proxy, and it can also serve static resources efficiently \citep{nginx}. Dynamic requests are forwarded to the Python application process managed by Gunicorn, a Python WSGI HTTP server that can run Flask applications in a production-style environment \citep{gunicorn,flask}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/deploy.png}
-    \caption{Deployment runtime architecture. Browser requests are handled by NGINX, forwarded to Gunicorn, and then processed by the Python web application layer.}
-    \label{fig:deployment_runtime}
+    \caption{Deployment runtime architecture.}
+    \label{fig58}
 \end{figure}
 
 This separation is useful because static files can be handled and cached independently, while computational requests such as dataset loading, anomaly detection, label submission, threshold recalculation, and similar-pattern search are processed by the backend. A server deployment also requires more careful management of package versions, file permissions, upload limits, static-resource paths, process restarts, and runtime logs.

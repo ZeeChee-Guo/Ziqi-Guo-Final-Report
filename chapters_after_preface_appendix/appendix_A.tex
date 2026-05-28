@@ -1,1 +1,40 @@
-\chapter{Quick Start}
+\chapter{Appendix: Quick Start}
+This appendix summarizes the Quick Start instructions from the AnDriDemo GitHub README. The repository is available at \url{https://github.com/ZeeChee-Guo/AndriDemo}.
+
+\section{Prerequisites}
+
+AnDriDemo requires Python 3.9.0. If the NORMA baseline is needed, the proprietary \textbf{norma.py} file must be obtained separately and placed under \textbf{algorithms/norma/}. This file is not included in the public repository.
+
+\section{Setup Instructions}
+
+\begin{enumerate}
+    \item Clone the repository and enter the project directory:
+\begin{verbatim}
+git clone https://github.com/ZeeChee-Guo/AndriDemo.git
+cd AndriDemo
+\end{verbatim}
+
+\item Create and activate a virtual environment.
+
+On Windows:
+\begin{verbatim}
+python -m venv venv
+venv\Scripts\activate
+\end{verbatim}
+
+On MacOS or Linux:
+\begin{verbatim}
+python3 -m venv venv
+source venv/bin/activate
+\end{verbatim}
+\item Install the required dependencies:
+\begin{verbatim}
+pip install -r requirements.txt
+\end{verbatim}
+\item Run the Flask server:
+\begin{verbatim}
+python app.py
+\end{verbatim}
+\end{enumerate}
+
+After the server starts, the system can be opened in a web browser at \url{http://localhost:5000/}.

@@ -52,12 +52,12 @@ The experiments also report AUC-ROC. Unlike precision, recall, and F1-score, AUC
 \section{ECG Experimental Results and Analysis}
 \fei{Graphs are needed for each experiment and analysis.}
 
-Table~\ref{tab:ecg_results} reports the ECG detection results for AnDri and the three baseline methods. AnDri achieves the best recall, F1-score, and AUC among all methods. Although NormA obtains the highest precision, its recall is much lower, which indicates that it misses many true anomaly points. DAMP has relatively high recall, but its lower precision and F1-score show that it produces more false positives. SAND performs poorly on recall in this setting, suggesting that many ECG anomalies are not successfully detected.
+Table~\ref{tab61} reports the ECG detection results for AnDri and the three baseline methods. AnDri achieves the best recall, F1-score, and AUC among all methods. Although NormA obtains the highest precision, its recall is much lower, which indicates that it misses many true anomaly points. DAMP has relatively high recall, but its lower precision and F1-score show that it produces more false positives. SAND performs poorly on recall in this setting, suggesting that many ECG anomalies are not successfully detected.
 
 \begin{table}[H]
 \centering
 \caption{ECG detection results \cite{park2025andri}.}
-\label{tab:ecg_results}
+\label{tab61}
 \begin{tabular}{lcccc}
 \hline
 Algorithm & Precision & Recall & F1-Score & AUC \\
@@ -76,10 +76,10 @@ The results show that AnDri provides the best overall balance between detecting 
     \centering
     \includegraphics[width=\textwidth]{figures/andri_result.png}
     \caption{ECG result analysis \cite{park2025andri}.}
-    \label{fig:ecg_case_study}
+    \label{fig61}
 \end{figure}
 
-Figure~\ref{fig:ecg_case_study} gives a visual explanation of these results. The top part, labeled ``Comparative Anomalies'', shows a region containing true anomalies. In this region, AnDri's anomaly scores are above its threshold, so the system correctly identifies the region as anomalous. In contrast, NormA and SAND do not clearly separate the anomalous region from normal behavior. This explains why the baselines have weaker recall in the Table~\ref{tab:ecg_results}.
+Figure~\ref{fig61} gives a visual explanation of these results. The top part, labeled ``Comparative Anomalies'', shows a region containing true anomalies. In this region, AnDri's anomaly scores are above its threshold, so the system correctly identifies the region as anomalous. In contrast, NormA and SAND do not clearly separate the anomalous region from normal behavior. This explains why the baselines have weaker recall in the Table~\ref{tab61}.
 
 The bottom part, labeled ``Correcting False Positives'', shows the opposite situation. The highlighted green region represents a change in normal ECG pattern, namely concept drift, rather than true anomaly points. AnDri assigns this region a score below its threshold, so it correctly treats the subsequence as normal behavior under drift. However, the baseline methods produce scores close to or above their thresholds, which can lead them to classify the drift region as anomalous. In this case, AnDri can recognize that a changed pattern may be a new normal pattern, while the baseline methods are more likely to confuse this drift with an anomaly.
 
