@@ -5,8 +5,13 @@
 
 
 
-\section{Future Work} \item Expand the system to handle multivariate time series data
-    \item The process of dynamically adjusting the optimization threshold
-    \item Test on more datasets  
-    
-    \fei{At least 3 future work items with a few sentences describing initial ideas of how to solve and why it's important. }
+\section{Future Work}
+\fei{At least 3 future work items with a few sentences describing initial ideas of how to solve and why it's important. }
+
+Three directions for future work are provide here. 
+
+First, AnDri can be extended from uni-variate time series to multivariate time series. Many real-world applications involve multiple related variables that evolve together. For example, financial monitoring may include stock prices, volume, and interest rates. Extending AnDri to multivariate data would allow the system to capture relationships among variables and detect anomalies that are only visible when multiple signals are analyzed together.
+
+Second, the adaptive-threshold workflow can be improved with a clearer stopping criterion. In the current system, the threshold is refined through user feedback on candidate anomalies and candidate normal points. This human-in-the-loop design improves interpretability and can reduce false positives, but it may also require repeated user interaction. Future work can define automatic stopping rules based on  confidence in the candidate labels or the expected benefit of asking for another user label. This would help balance detection accuracy with labeling effort.
+
+Third, AnDri should be evaluated on more real-world drift scenarios. The drift regions in ECG dataset are injected artificially. Synthetic drift is helpful for evaluation because the ground truth is known, but it may not fully represent the complexity of real world environments. Future experiments should include more naturally occurring drift in real world scenarios. This would make the evaluation more convincing.
