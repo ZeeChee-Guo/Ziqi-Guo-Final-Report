@@ -6,54 +6,99 @@
 All experiments in this chapter were conducted on a local Windows laptop. The machine uses an Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz with 8 logical processors and 16 GB of physical memory. The operating system is Windows 11, 64-bit. The experiments were run through the AnDri demo web application, which uses a Python Flask backend and a JavaScript front-end for interactive visualization and user labeling. Python 3.9.0 is the recommended runtime environment, and the main Python dependencies include Flask, NumPy, pandas, SciPy, scikit-learn, STUMPY, and TSB-UAD.
 
 \section{Datasets}
+The ECG dataset is the main time-series dataset used in this report to evaluate anomaly detection under concept drift. Electrocardiogram (ECG) signals record the electrical activity of the heart as a uni-variate time series. This domain is useful for AnDri because normal heartbeat patterns are repetitive but not stationary: a change in activity or physiological condition can shift the normal ECG pattern, while arrhythmia-related events should still be detected as true anomalies. Therefore, ECG provides a clear setting for studying the distinction between abnormal events and drift-driven changes in normal behavior.
 
+The ECG data used in the AnDri is taken from the TSB-UAD benchmark and contains approximately 230K time points with labeled anomalies corresponding to premature ventricular contractions \citep{park2025andri,paparrizos2022tsbuad}. In the demo system, the ECG input is stored in ARFF format. The local file \texttt{MBA\_ECG805\_data.arff} contains two attributes: \texttt{signal}, which stores the ECG value, and \texttt{class}, which marks each point as normal or anomalous. This file contains 230,400 points, including 20,200 anomaly-labeled points. In the experiments, the class label is used as the ground truth for evaluating detected anomalous regions.
 
+The ECG dataset already contains ground-truth anomaly labels, where abnormal regions correspond to irregular heartbeat patterns. To evaluate anomaly detection under concept drift, the AnDri evaluation additionally creates controlled drift regions by combining ECG subsequences from different patients or activity patterns \citep{park2025adaptive}. In this setting, drift represents a change from one normal ECG pattern to another, rather than a true abnormal event.
+
+For drift injection, the time series is divided into several segments, and each segment is assigned to one ECG source pattern. A short transition region is injected between two consecutive patterns to simulate the change in normal behavior. By adjusting the length of this transition region, the experiment can represent concept drift. Approximately 10\% of the ECG series is used as drift regions. These drift regions are not counted as anomalies; they are used to test whether AnDri can avoid misclassify normal behavior as abnormal.
 
 \section{Baselines}
 
+\fei{Include references to each baseline, GitHub source for data and code.}
+
+\noindent To evaluate the ECG results, AnDri is compared with three baseline anomaly detection methods: NormA, SAND, and DAMP. These methods are selected because they are representative subsequence anomaly detection methods for uni-variate time series and are closely related to the problem setting considered in AnDri. The ECG dataset is taken from the public TSB-UAD benchmark repository,\footnote{\url{https://github.com/TheDatumOrg/TSB-UAD}} while the AnDri demo integration is implemented in the project repository.\footnote{\url{https://github.com/ZeeChee-Guo/AndriDemo}} For the baseline implementations, SAND and DAMP are integrated through publicly available benchmark or project code. NormA is treated separately because its source code is not directly included in the TSB-UAD repository used in this project; access to the NormA implementation needs to be requested from the original authors.
 
 
 
-
-
-
-
-
-
-
-
-
-
-\begin{itemize}
-    \item All baselines use fixed thresholds without drift adaptation
-    \item Integrated into AnDri for fair comparison under same labeling and thresholding interface
-    \item \fei{Include references to each baseline, GitHub source for data and code.}
-\end{itemize}
 
 \section{Evaluation Metrics}
-\begin{itemize}
-    \item Precision, Recall, F1-score  \fei{How do you measure these using what labels?}
-    \item Run the application and present the results  \fei{What does this mean technically?  Avoid general statements that are vague.  PResent what results????}
-\end{itemize}
+\fei{How do you measure these using what labels?}
+\fei{What does this mean technically?  Avoid general statements that are vague.  PResent what results????}
 
-\section{Case Studies}
-\begin{itemize}
-    \item Case 1: Seasonal drift misclassified as anomaly
-    \item Case 2: ECG with active learning
-    \item  Based on the results and screenshots, I will explain in detail that the drift area was mistakenly identified as anomalies by other algorithms. Only Andri detected it as drift and did not mark it as anomalies. Or the anomalies area was not detected by other algorithms, but Andri correctly detected it.
-    \fei{Graphs are needed for each experiment and analysis.}
-    
-\end{itemize}
+
+The evaluation compares the final predicted anomaly labels with the ground-truth labels in the ECG dataset. When the ARFF file is loaded, the implementation reads the ECG signal value and its class label. The class label is stored as GroundTruth: \textbf{GroundTruth[i] = 1} means that point \(i\) is a true anomaly, and \textbf{GroundTruth[i] = 0} means that it is normal.
+
+After the adaptive thresholding step, each method has a final threshold. The anomaly score of each point is compared with this threshold to generate a binary prediction. For NormA, SAND, and DAMP, one global threshold is used:
+\[\hat{y}_i = 1 \quad \text{if} \quad s_i > \theta.\]
+For AnDri, the threshold is associated with the normal pattern assigned to the point:
+\[ \hat{y}_i = 1 \quad \text{if} \quad s_i > \theta_{m_i}.\]
+Otherwise, \(\hat{y}_i = 0\). The predicted labels \(\hat{y}_i\) are then compared with the ground-truth labels \(y_i = \textbf{GroundTruth[i]}\) to calculate precision, recall, and F1-score. User feedback labels are only used to adjust the threshold; they are not used as the final evaluation labels.
+
+The prediction results are evaluated using precision, recall, and F1-score. Let TP denote true positives, FP denote false positives, and FN denote false negatives. TP is the number of anomaly-labeled points correctly detected as anomalies. FP is the number of normal points incorrectly detected as anomalies. FN is the number of anomaly-labeled points missed by the method.
+
+\[Precision = \frac{TP}{TP + FP}\]
+
+\[Recall = \frac{TP}{TP + FN}\]
+
+\[F1 = \frac{2 \times Precision \times Recall}{Precision + Recall}\]
+
+Precision measures how many detected anomalies are correct. A high precision means the method produces fewer false alarms. Recall measures how many true anomalies are successfully detected. A high recall means the method misses fewer real anomalous regions. F1-score combines precision and recall into one value, which is useful when both false positives and missed anomalies are important.
+
+The experiments also report AUC-ROC. Unlike precision, recall, and F1-score, AUC evaluates the continuous anomaly scores before choosing a single threshold. It measures whether true anomaly points tend to receive higher anomaly scores than normal points. AUC is useful because different methods may use different score ranges or thresholds. A higher AUC indicates better overall separation between anomalous and normal regions.
+
+
+\section{ECG Experimental Results and Analysis}
+\fei{Graphs are needed for each experiment and analysis.}
+
+Table~\ref{tab:ecg_results} reports the ECG detection results for AnDri and the three baseline methods. AnDri achieves the best recall, F1-score, and AUC among all methods. Although NormA obtains the highest precision, its recall is much lower, which indicates that it misses many true anomaly points. DAMP has relatively high recall, but its lower precision and F1-score show that it produces more false positives. SAND performs poorly on recall in this setting, suggesting that many ECG anomalies are not successfully detected.
+
+\begin{table}[H]
+\centering
+\caption{ECG detection results \cite{park2025andri}.}
+\label{tab:ecg_results}
+\begin{tabular}{lcccc}
+\hline
+Algorithm & Precision & Recall & F1-Score & AUC \\
+\hline
+AnDri & 0.412 & \textbf{0.808} & \textbf{0.546} & \textbf{0.964} \\
+NormA & \textbf{0.679} & 0.391 & 0.496 & 0.887 \\
+SAND  & 0.236 & 0.023 & 0.042 & 0.853 \\
+DAMP  & 0.239 & 0.776 & 0.365 & 0.816 \\
+\hline
+\end{tabular}
+\end{table}
+
+The results show that AnDri provides the best overall balance between detecting real ECG anomalies and separating anomalies from normal pattern changes. The high recall means that AnDri detects most of the labeled anomalous ECG points. The highest F1-score shows that this improvement is not only caused by predicting more points as anomalies, but by achieving a better balance between recall and precision. The highest AUC further indicates that AnDri's anomaly scores separate anomalous and normal points more clearly than the baseline scores.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/andri_result.png}
+    \caption{ECG result analysis \cite{park2025andri}.}
+    \label{fig:ecg_case_study}
+\end{figure}
+
+Figure~\ref{fig:ecg_case_study} gives a visual explanation of these results. The top part, labeled ``Comparative Anomalies'', shows a region containing true anomalies. In this region, AnDri's anomaly scores are above its threshold, so the system correctly identifies the region as anomalous. In contrast, NormA and SAND do not clearly separate the anomalous region from normal behavior. This explains why the baselines have weaker recall in the Table~\ref{tab:ecg_results}.
+
+The bottom part, labeled ``Correcting False Positives'', shows the opposite situation. The highlighted green region represents a change in normal ECG pattern, namely concept drift, rather than true anomaly points. AnDri assigns this region a score below its threshold, so it correctly treats the subsequence as normal behavior under drift. However, the baseline methods produce scores close to or above their thresholds, which can lead them to classify the drift region as anomalous. In this case, AnDri can recognize that a changed pattern may be a new normal pattern, while the baseline methods are more likely to confuse this drift with an anomaly.
+
+Overall, the ECG experiment supports the main motivation of AnDri. In time series with concept drift, anomaly detection is not only a matter of finding unusual subsequences. The system must also decide whether a changed subsequence is truly abnormal or simply reflects a shift in normal behavior. The quantitative results and the visual comparison both show that AnDri handles this distinction more effectively than the baseline methods.
+
+
+
 
 \section{Discussion}
-\begin{itemize}
-    \item AnDri outperforms baselines in drift environments
-    \item Active learning improves anomaly detection when ground truth is partial
-    \item Limitation: labeling effort, it may be necessary to repeatedly ask the user for their judgment, and the termination of the threshold iteration process needs to take into account trade-offs.
-\end{itemize}
+
+The ECG experiment demonstrates that AnDri can distinguish between true anomalies and concept drift in the same time series. The visual comparison shows that AnDri can recognize new normal patterns without incorrectly reporting them as anomalies. This supports the main motivation of the system: anomaly detection should consider whether a changed pattern is truly abnormal or whether it represents a shift in normal behavior.
+
+The active-learning workflow is also important for the final result. In many real anomaly detection tasks, complete and reliable labels are difficult to obtain. The user may only label a small number of candidate anomalies, and some of these labels may be uncertain or incorrect. AnDri addresses this by asking the user to review candidate points near the decision boundary and then recomputing the threshold. This human-in-the-loop process helps the system use partial feedback more effectively than a fixed automatic threshold.
+
+However, this design also introduces limitations. The system depends on user feedback, so the quality of the final threshold can be affected by the user's domain knowledge and labeling consistency. In addition, the review process may require several iterations when the anomaly-score distribution is ambiguous. Asking for more feedback can improve detection quality, but it also increases labeling effort. This reflects a common trade-off in active-learning systems between annotation cost and model performance.
+
+Another limitation is that AnDri is specifically designed for environments where anomalies and concept drift coexist. If a time series mainly contains anomalies but no concept drift, the advantages of AnDri may become less significant. Future improvement will be briefly explained in the next chapter.
 
 
 
-\section{Datasets}
 
 
