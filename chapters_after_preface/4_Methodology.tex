@@ -17,7 +17,7 @@ Here, every point \(i\) has its own anomaly score \(s_i\), and these scores are 
 
 Although the final score is represented at the point level, many time-series anomaly detection methods compute this score using local temporal context. Given a window length \(\ell\), a local subsequence starting at index \(i\) can be written as
 \[T_{i,\ell}=[x_i,x_{i+1},\ldots,x_{i+\ell-1}].\]
-A method may compare this local subsequence with learned normal patterns and then assign the resulting score to the corresponding point or time region. This is important because many anomalies are not visible from one isolated value, but from the shape of a short interval.
+Local subsequences are compared with learned normal patterns and then assigned scores to the corresponding points.
 
 After the anomaly scores are generated, the final binary anomaly label is obtained by applying a threshold:
 \[
@@ -27,13 +27,13 @@ After the anomaly scores are generated, the final binary anomaly label is obtain
 0, & \text{otherwise,}
 \end{cases}
 \]
-where \(\hat{y}_i=1\) means that point \(i\) is predicted as anomaly, and \(\hat{y}_i=0\) means that it is predicted as normal point. This workflow is common in time-series anomaly detection. Baseline methods such as NormA, SAND, and DAMP can produce anomaly scores, but their final anomaly labels still depend on how the threshold is selected.
+where \(\hat{y}_i=1\) means that point \(i\) is predicted as anomaly, and \(\hat{y}_i=0\) means that it is predicted as normal point. This workflow is common in time-series anomaly detection. Time series anomaly detect methods produce anomaly scores. Final anomaly labels will depend on how the threshold is selected.
 
 Choosing this threshold is difficult when concept drift is present. A fixed global threshold may work in one part of the time series but fail in another part after the normal behavior changes. If the threshold is too low, drift-driven normal behavior may be incorrectly marked as anomalous. If the threshold is too high, true anomalies may be missed. Therefore, the problem is not only how to compute anomaly scores, but also how to interpret and calibrate these scores under changing normal patterns.
 
-AnDri addresses this problem by supporting interactive threshold adjustment. The user can inspect candidate anomalous points, provide feedback, and refine the threshold used to convert anomaly scores into final labels. This feedback process is not limited to AnDri's own scoring method. In the demo system, baseline methods such as NormA, SAND, and DAMP can also generate point-level anomaly scores, and the user can still participate in the feedback process to adjust the threshold before final predictions are produced.
+AnDri addresses this problem by supporting interactive threshold adjustment. The user can review candidate anomalous points, provide feedback. So that the system can refine the threshold according to the user feedback to convert anomaly scores into final labels. This feedback process is not limited to AnDri's own scoring method. In the demo system, baseline methods such as NormA, SAND, and DAMP can also generate point-level anomaly scores, and the user can still participate in the feedback process to adjust the threshold before final predictions are produced.
 
-Figure~\ref{fig41} illustrates this problem formulation. The upper plot shows the original time series. The lower plot shows the anomaly score assigned to each time point. The threshold is applied to the anomaly-score curve, not directly to the raw time-series values.
+Figure~\ref{fig41} illustrates this problem formulation. The upper plot shows the original time series. The lower plot shows the anomaly score of each time point. The threshold is applied to the anomaly-score curve.
 
 \begin{figure}[H]
 \centering
@@ -135,15 +135,15 @@ Each detection method produces a score sequence
 \[S=[s_1,s_2,\ldots,s_n],\]
 where a larger score indicates stronger evidence of abnormality. In the implementation, scores are normalized to the interval \([0,1]\).
 
-For AnDri, the backend uses the prior AnDri scoring module to learn normal patterns and compute point-level anomaly scores. Each point is also assigned to a normal pattern index:
+For AnDri, each point is also assigned to a normal pattern index:
 \[g(i) \in \{1,2,\ldots,m\},\]
-where \(g(i)\) identifies the normal pattern that best explains point \(i\). This mapping is important because different normal patterns may have different score distributions. A score that is high for one normal pattern may be ordinary for another. Therefore, AnDri does not use only one global threshold; it estimates thresholds separately for the normal-pattern groups observed in the selected training regions.
+where \(g(i)\) identifies the normal pattern that best explains point \(i\). This mapping is important because different normal patterns may have different score distributions. A score that is high for one normal pattern may be ordinary for another. AnDri sets thresholds separately for the normal-pattern groups observed in the training-sets instead of using one single global threshold.
 
-For comparison, NormA, SAND, and DAMP are also integrated into the same workflow \citep{boniol2021norma,boniol2021sand,lu2022damp}. These methods generate normalized anomaly scores, but they do not provide the same dynamic normal-pattern grouping used by AnDri. As a result, the baseline workflow applies one adaptive threshold to the selected training region, while AnDri applies normal-pattern-specific thresholds.
+For comparison, NormA, SAND, and DAMP are also integrated into the same workflow \citep{boniol2021norma,boniol2021sand,lu2022damp}. These methods generate normalized anomaly scores. The baseline algorithms applies one adaptive threshold, while AnDri applies normal-pattern-specific thresholds.
 
-\section{Adaptive Thresholding with User Labels}
+\section{Adaptive Threshold with User Labels}
 
-The system maintains a label flag \(f_i\) for each point. Initially, most points are unlabeled. A user can mark points as anomalous or normal:
+The system maintains a label flag \(f_i\) for each point. Initially, all the points are unlabeled. A user can mark points as anomaly or normal points:
 \[
 f_i =
 \begin{cases}
@@ -152,7 +152,7 @@ f_i =
 2, & \text{user-confirmed normal}.
 \end{cases}
 \]
-The purpose of the adaptive thresholding step is to estimate a threshold \(\theta\) from the user-marked anomaly scores. For a global detector, the final decision is
+The purpose of the adaptive thresholding step is to estimate a threshold \(\theta\) from the user-marked anomaly scores. The final decision is
 \[
 \hat{y}_i =
 \begin{cases}
@@ -167,7 +167,8 @@ To model the marked anomaly scores, the backend fits a two-component Bayesian Ga
 \[p(s)=\sum_{k=1}^{2}\pi_k \mathcal{N}(s;\mu_k,\sigma_k^2).\]
 Only mixture components with weight greater than a small threshold are treated as active. If fewer than two active components remain, the labeled anomaly scores are considered stable, and the threshold is set using both the mixture statistics and the anomaly-proportion cutoff:
 \[\theta = \max(q_{\rho}, \mu-\sigma).\]
-Here \(\mu\) and \(\sigma\) describe the active anomaly-score component. This rule keeps the threshold high enough to respect the expected anomaly proportion while still adapting to the distribution of user-confirmed anomalies.
+Here \(\mu\) and \(\sigma\) describe the active anomaly-score component. This rule keeps the threshold consistent with the expected anomaly proportion while also adapting to the user-confirmed anomalies.
+
 
 
 
@@ -195,7 +196,7 @@ The final AnDri decision is therefore
 \]
 This design is important under concept drift. If the time series contains several normal patterns, each normal pattern may have a different score range. A single global threshold may over-flag a drifting normal region or under-detect anomalies in a lower-variance region. Pattern-specific thresholds allow the decision boundary to follow the changing normal context learned by AnDri.
 
-If a point belongs to a normal pattern that was not present in the user-selected training region, the implementation transfers the threshold from the most similar trained normal pattern. The nearest trained pattern is selected by Euclidean distance between normal-pattern subsequences:
+If a point belongs to a normal pattern that was not present in the user-selected training region, the implementation gets the threshold from the most similar trained normal pattern. The nearest trained pattern is selected by Euclidean distance between normal-pattern subsequences:
 \[k^*=\arg\min_{j \in K_{\text{train}}} \|NM_k-NM_j\|_2,\]
 and the missing threshold is assigned as \(\theta_k=\theta_{k^*}\). This fallback allows the system to still make a decision for regions not directly covered by user feedback.
 
@@ -300,7 +301,6 @@ points near Gaussian intersection};
 \draw[arrow] (fit) -- (stable);
 
 \draw[arrow] (stable) -- node[left] {yes} (threshold);
-
 \draw[arrow] (stable) -- node[above] {no} (query);
 
 \draw[arrow] (query) -- (feedback);

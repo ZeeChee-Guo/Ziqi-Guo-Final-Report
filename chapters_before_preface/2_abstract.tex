@@ -1,1 +1,9 @@
 \prefacesection{Abstract}
+
+Time-series anomaly detection is difficult when the distribution of data changes over time. Because unusual patterns may indicate true anomalies, but may also reflect concept drift, where the normal data distribution evolves. Treating drift as anomaly can create many false alarms, while adapting too quickly can cause true anomalies to be missed.
+
+The project combines anomaly detection, concept drift analysis, threshold adjustment, and user feedback in a single workflow. Instead of assuming that normal behavior remains fixed over time, AnDri compares subsequences with normal patterns that may change as the data evolves. The method also allows different thresholds to be applied to different normal patterns under concept drift.
+
+The implementation consists of a browser-based visualization interface and a Flask backend. The system integrates AnDri with baseline methods including NormA, SAND, and DAMP. Users can upload datasets, select training regions, inspect anomaly candidates, label abnormal points, and compare results produced by different methods. The system also supports iterative threshold refinement based on user feedback through an active-learning process.
+
+Experimental results show that the workflow can better separate true anomalies from normal changes caused by concept drift compared with the baseline methods.
