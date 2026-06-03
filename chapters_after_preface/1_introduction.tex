@@ -6,7 +6,7 @@
 % \fei{Briefly describe 2-3 related work techniques (high level) and state why they are not sufficient, state technical weaknesses.  I suggest you focus on NormA, SAND, DAMP.}
 
 
-\section{Problem Domain and Motivation}
+\section{Problem Domain}
 
 A time series is a sequence of observations recorded over time. Time-series data are common in many real-world applications, such as electrocardiogram (ECG) monitoring, electricity demand forecasting, and financial markets \citep{schmidl2022anomaly}. Unlike ordinary data, the order of observations in a time series is important. The meaning of a value depends not only on its magnitude, but also on when it occurs and how it relates to surrounding observations.
 
@@ -56,14 +56,11 @@ For example, in Figure~\ref{fig11}, the first region represents an old normal pa
 \label{fig11}
 \end{figure}
 
-Existing time-series anomaly detection methods provide important foundations for this problem. A common workflow in these methods is to first assign an anomaly score to each point, and then convert these scores into binary anomaly labels using a threshold. Choosing the threshold is difficult in practice. A global threshold may work for datasets which contain similar normal patterns, but it may fail when the data contain drift. When the normal behavior changes, the anomaly-score distribution may also change. As a result, a strict threshold may incorrectly classify drift-driven normal behavior as anomalous, while a loose threshold may miss true abnormal anomalies.
+Existing time-series anomaly detection methods provide important foundations for this problem. A common workflow in these methods is to first assign an anomaly score to each point, and then convert these scores into binary anomaly labels using a threshold. Choosing the threshold is difficult in practice. Since the calculation of the anomaly score of a point is dependent on the patterns in the time series. A global threshold may work for datasets which contain similar normal patterns, but it may fail when the data contain drift. When the normal behavior changes, the anomaly-score distribution may also change. As a result, a strict threshold may incorrectly classify drift-driven normal behavior as anomalous, while a loose threshold may miss true abnormal anomalies.
 
 AnDri algorithm addresses this challenge by considering anomaly detection and concept drift detection together \citep{park2025andri,park2025adaptive}. AnDri algorithm does not use a single global threshold. It maintains multiple normal patterns and updates them as the data changed. This allows the system to distinguish anomalies from changes caused by concept drift.
 
-In addition to AnDri's anomaly and drift co-detection framework, the system supports an interactive feedback process for refining detection results. Users can review uncertain candidates selected by the system and indicate whether each candidate is normal or anomalous. The feedback is then used to refine the threshold that converts anomaly scores into final predictions. This workflow supports AnDri and baseline methods in the system. As a result, the system serves not only as an implementation of AnDri, but also as an interactive application for exploring, comparing, and evaluating different time-series anomaly detection methods.
-
-
-In this report, \textbf{AnDri algorithm} refers to anomaly detection algorithm \citep{park2025adaptive}. While the \textbf{AnDri system} supports data upload, visualization, user feedback, baseline comparison, and result analysis is the work presenting in this report. The main contribution of this project is the design and implementation of an interactive system that integrates anomaly detection, user feedback, threshold refinement, visualization, and experimental evaluation.
+In this report, \textbf{AnDri algorithm} refers to the anomaly detection algorithm \citep{park2025adaptive}. The \textbf{AnDri system} is the interactive visual analytics platform developed in this project.
 
 \section{Project Goals}
 
