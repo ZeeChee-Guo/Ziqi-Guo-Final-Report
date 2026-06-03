@@ -1,24 +1,19 @@
-
 \chapter{Experiments}
 
 
-\section{Experimental Setup}
-All experiments in this chapter were conducted on a local Windows laptop. The machine uses an Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz with 8 logical processors and 16 GB of physical memory. The operating system is Windows 11, 64-bit. The experiments were run through the AnDri demo web application, which uses a Python Flask backend and a JavaScript front-end for interactive visualization and user labeling. Python 3.9.0 is the recommended runtime environment, and the main Python dependencies include Flask, NumPy, pandas, SciPy, scikit-learn, STUMPY, and TSB-UAD.
+\section{Experiment Setup}
+The experiment was conducted on a local Windows laptop. The machine uses an Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz with 8 logical processors and 16 GB of physical memory. The operating system is Windows 11, 64-bit. The system uses Python 3.9.0 as the runtime environment, and the main Python dependencies include Flask, NumPy, pandas, SciPy, scikit-learn, STUMPY, and TSB-UAD.
 
 \section{Datasets}
-The ECG dataset is the main time-series dataset used in this report to evaluate anomaly detection under concept drift. Electrocardiogram (ECG) signals record the electrical activity of the heart as a uni-variate time series. This domain is useful for AnDri because normal heartbeat patterns are repetitive but not stationary: a change in activity or physiological condition can shift the normal ECG pattern, while arrhythmia-related events should still be detected as true anomalies. Therefore, ECG provides a clear setting for studying the distinction between abnormal events and drift-driven changes in normal behavior.
+The ECG dataset is used in this project. Electrocardiogram (ECG) signals record the electrical activity of the heart as a uni-variate time series. The dataset is taken from the TSB-UAD benchmark and contains approximately 230K time points with labeled anomalies corresponding to premature ventricular contractions \citep{park2025andri,paparrizos2022tsbuad}. This file contains 230,400 points, including 20,200 anomaly-labeled points. In the experiments, the class label is used as the ground truth for evaluating detected anomalous regions.
 
-The ECG data used in the AnDri is taken from the TSB-UAD benchmark and contains approximately 230K time points with labeled anomalies corresponding to premature ventricular contractions \citep{park2025andri,paparrizos2022tsbuad}. In the demo system, the ECG input is stored in ARFF format. The local file \texttt{MBA\_ECG805\_data.arff} contains two attributes: \texttt{signal}, which stores the ECG value, and \texttt{class}, which marks each point as normal or anomalous. This file contains 230,400 points, including 20,200 anomaly-labeled points. In the experiments, the class label is used as the ground truth for evaluating detected anomalous regions.
-
-The ECG dataset already contains ground-truth anomaly labels, where abnormal regions correspond to irregular heartbeat patterns. To evaluate anomaly detection under concept drift, the AnDri evaluation additionally creates controlled drift regions by combining ECG subsequences from different patients or activity patterns \citep{park2025adaptive}. In this setting, drift represents a change from one normal ECG pattern to another, rather than a true abnormal event.
-
-For drift injection, the time series is divided into several segments, and each segment is assigned to one ECG source pattern. A short transition region is injected between two consecutive patterns to simulate the change in normal behavior. By adjusting the length of this transition region, the experiment can represent concept drift. Approximately 10\% of the ECG series is used as drift regions. These drift regions are not counted as anomalies; they are used to test whether AnDri can avoid misclassify normal behavior as abnormal.
+The ECG dataset already contains ground-truth anomaly labels. To evaluate anomaly detection under concept drift, the AnDri evaluation additionally creates controlled drift regions by combining ECG subsequences from different patients or activity patterns \citep{park2025adaptive}. The time series is divided into several segments, and each segment is assigned to one ECG source pattern. A short transition region is injected between two consecutive patterns to simulate the change in normal behavior. By adjusting the length of this transition region, the experiment can represent concept drift. Approximately 10\% of the ECG series is used as drift regions. These drift regions are not counted as anomalies; they are used to test whether AnDri can avoid misclassify normal behavior as abnormal.
 
 \section{Baselines}
 
 \fei{Include references to each baseline, GitHub source for data and code.}
 
-\noindent To evaluate the ECG results, AnDri is compared with three baseline anomaly detection methods: NormA, SAND, and DAMP. These methods are selected because they are representative subsequence anomaly detection methods for uni-variate time series and are closely related to the problem setting considered in AnDri. The ECG dataset is taken from the public TSB-UAD benchmark repository,\footnote{\url{https://github.com/TheDatumOrg/TSB-UAD}} while the AnDri demo integration is implemented in the project repository.\footnote{\url{https://github.com/ZeeChee-Guo/AndriDemo}} For the baseline implementations, SAND and DAMP are integrated through publicly available benchmark or project code. NormA is treated separately because its source code is not directly included in the TSB-UAD repository used in this project; access to the NormA implementation needs to be requested from the original authors.
+\noindent To evaluate the ECG results, AnDri is compared with three baseline anomaly detection methods: NormA, SAND, and DAMP. The ECG dataset is taken from the public TSB-UAD benchmark repository,\footnote{\url{https://github.com/TheDatumOrg/TSB-UAD}} while the AnDri demo integration is implemented in the project repository.\footnote{\url{https://github.com/ZeeChee-Guo/AndriDemo}} For the baseline implementations, SAND and DAMP are integrated through publicly available benchmark or project code. NormA is treated separately because its source code is not directly included in the TSB-UAD repository used in this project; access to the NormA implementation needs to be requested from the original authors.
 
 
 
@@ -44,9 +39,7 @@ The prediction results are evaluated using precision, recall, and F1-score. Let 
 
 \[F1 = \frac{2 \times Precision \times Recall}{Precision + Recall}\]
 
-Precision measures how many detected anomalies are correct. A high precision means the method produces fewer false alarms. Recall measures how many true anomalies are successfully detected. A high recall means the method misses fewer real anomalous regions. F1-score combines precision and recall into one value, which is useful when both false positives and missed anomalies are important.
-
-The experiments also report AUC-ROC. Unlike precision, recall, and F1-score, AUC evaluates the continuous anomaly scores before choosing a single threshold. It measures whether true anomaly points tend to receive higher anomaly scores than normal points. AUC is useful because different methods may use different score ranges or thresholds. A higher AUC indicates better overall separation between anomalous and normal regions.
+Precision measures how many detected anomalies are correct. Recall measures how many true anomalies are successfully detected. F1-score combines precision and recall into one value. The experiments also report AUC-ROC. A higher AUC indicates better overall separation between anomalous and normal regions.
 
 
 \section{ECG Experimental Results and Analysis}
@@ -56,7 +49,7 @@ Table~\ref{tab61} reports the ECG detection results for AnDri and the three base
 
 \begin{table}[H]
 \centering
-\caption{ECG detection results \cite{park2025andri}.}
+\caption{ECG detection results.}
 \label{tab61}
 \begin{tabular}{lcccc}
 \hline

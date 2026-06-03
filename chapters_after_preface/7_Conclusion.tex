@@ -1,9 +1,8 @@
 \chapter{Conclusion}
 
-
 This report presented AnDri, a system for anomaly and drift co-detection in time-series data. The main motivation of the project is that time series are often non-stationary: normal behavior may change over time, and these changes can be confused with true anomalies. AnDri addresses this problem by combining normal-pattern learning, anomaly scoring, adaptive thresholding, and interactive visualization in one system.
 
-The report introduced the necessary background on time-series anomalies and concept drift, reviewed related anomaly detection methods, described the methodology of the AnDri workflow, explained the system implementation in detail, and presented experiments to evaluate the system. The experiments further demonstrate how AnDri supports anomaly and drift co-exploration on different time-series datasets and how its results compare with baseline methods.
+The report introduced the necessary background on time-series anomalies and concept drift, reviewed related anomaly detection methods, described the methodology of the AnDri workflow, explained the system implementation in detail, and presented experiments to evaluate the system. The experiments further demonstrate how AnDri supports anomaly and drift co-exploration and how its results compare with baseline methods.
 
 Overall, this project shows that anomaly detection in the presence of concept drift benefits from both automated analysis and human-in-the-loop interaction. By allowing users to validate candidate anomalies, and compare results with baseline methods, AnDri makes the detection process interpretable and practical for time-series analysis.
 
@@ -12,7 +11,7 @@ Overall, this project shows that anomaly detection in the presence of concept dr
 \section{Future Work}
 \fei{At least 3 future work items with a few sentences describing initial ideas of how to solve and why it's important. }
 
-Three directions for future work are provide here. 
+Three directions for future work are provided here. 
 
 First, AnDri can be extended from uni-variate time series to multivariate time series. Many real-world applications involve multiple related variables that evolve together. For example, financial monitoring may include stock prices, volume, and interest rates. Extending AnDri to multivariate data would allow the system to capture relationships among variables and detect anomalies that are only visible when multiple signals are analyzed together.
 

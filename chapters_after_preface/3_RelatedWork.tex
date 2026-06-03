@@ -2,12 +2,6 @@
 
 This chapter reviews prior work related to time-series anomaly detection and concept drift adaptation. Existing subsequence anomaly detection methods provide strong foundations for detecting unusual time-series regions. In particular, this chapter focuses on subsequence anomaly detection methods used as baselines in the AnDri work, including NormA, SAND, and DAMP, and then discusses concept drift detection methods and benchmark resources. 
 
-\section{Time-Series Anomaly Detection}
-
-Time-series anomaly detection aims to identify observations or subsequences that deviate from expected temporal behavior. General anomaly detection surveys classify anomalies according to their relationship with the data distribution and surrounding context \citep{chandola2009anomaly}, while time-series-specific evaluations show that performance can vary greatly across datasets, anomaly types, and evaluation protocols \citep{schmidl2022anomaly}. In subsequence anomaly detection, the object of interest is not only a single point but a local segment whose shape, frequency, amplitude, or duration is unusual.
-
-Many time-series anomaly detection methods rely on subsequence similarity. The Matrix Profile provides an efficient way to compute nearest-neighbor distances among subsequences and has been widely used for motif and discord discovery \citep{yeh2016matrix}. A motif is a repeated subsequence, while a discord is a subsequence that is far from its nearest neighbor. This formulation is powerful because it is domain-agnostic and does not require a large labeled training set. However, discord-based reasoning often assumes that normal behavior is relatively stable or sufficiently repeated across the available data. When the time series contains concept drift, a new normal pattern may appear rare at first and may therefore be confused with an anomaly.
-
 \section{Normal-Model-Based Detection: NormA}
 
 NormA is an unsupervised subsequence anomaly detection algorithm for time-series data \citep{boniol2021norma}. Instead of detecting only isolated discords, NormA builds a normal model from frequently occurring subsequences and measures anomalies based on their distance from this model. The method is scalable and does not require labeled data.
@@ -18,14 +12,12 @@ However, NormA mainly relies on a global normal model learned from historical da
 
 SAND extends subsequence anomaly detection to streaming data \citep{boniol2021sand}. It incrementally updates its model as new data arrives, which makes it suitable for real-time monitoring scenarios such as sensors and system logs. However, SAND mainly focuses on automatic anomaly detection and does not explicitly support user exploration of concept drift and changing normal behavior.
 
-DAMP is another streaming anomaly detection method based on Matrix Profile techniques \citep{lu2022damp}. Its main advantage is computational efficiency, allowing anomaly detection on very large and fast data streams. DAMP is effective for discord discovery, but it does not explicitly model concept drift. As normal patterns evolve or recur over time, discord-based methods may struggle to separate long-term drift from short-term anomalies \citep{park2025adaptive}.
+DAMP is also a streaming anomaly detection method based on Matrix Profile \citep{lu2022damp}. Its main advantage is computational efficiency, allowing anomaly detection on very large and fast data streams. DAMP is effective for discord discovery, but it does not explicitly model concept drift. As normal patterns evolve or recur over time, discord-based methods may struggle to separate long-term drift from short-term anomalies \citep{park2025adaptive}.
 
 Compared with these methods, AnDri focuses not only on anomaly detection performance but also on dynamically modeling changing normal behavior \citep{park2025andri}.
 
 
 
-\section{Concept Drift Detection and Adaptation}
+\section{Concept Drift Detection}
 
-Concept drift refers to changes in the underlying data distribution over time. Prior surveys describe drift adaptation as a central problem in learning from evolving data streams \citep{gama2014survey,lu2019learning}. A representative method is ADWIN, which uses an adaptive sliding window to detect distribution changes and adjust the window size according to observed evidence of drift \citep{bifet2007adwin}. Such methods are useful because they recognize that older data may become less relevant as the stream evolves.
-
-However, concept drift detection and anomaly detection are often studied as separate tasks. Drift detection methods usually aim to identify distributional change, while anomaly detection methods aim to identify abnormal events. In real time series, these two phenomena can look similar: both appear as deviations from past behavior. If a system treats all change as anomalous, it may produce many false positives during drift. If it adapts too aggressively, it may absorb true anomalies into the normal model \citep{park2025andri,park2025adaptive}.
+Concept drift refers to data distribution changes over time. Drift adaptation is a central problem in evolving data streams \citep{gama2014survey,lu2019learning}. ADWIN uses an adaptive sliding window to detect distribution changes and adjust the window size according to observed evidence of drift \citep{bifet2007adwin}. In real time series, anomaly and concept drift can look similar: both appear as deviations from past behavior. If a system treats all change as anomalous, it may produce many false positives during drift. If it adapts too aggressively, it may absorb true anomalies into the normal model \citep{park2025andri,park2025adaptive}.
