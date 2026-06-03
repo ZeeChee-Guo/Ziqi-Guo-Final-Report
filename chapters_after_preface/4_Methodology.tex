@@ -1,8 +1,8 @@
 \chapter{Methodology}
 
-    \fei{You cannot use his work, but have to write in your own words.  If you are going to talk about AnDri which is not your work, then describe this in Background chapter.  Move 3.2 to Background. }
-    \fei{Describe your methodology using a picture to show what is the problem, and then a picture showing your solution (framework).  This chapter is all about the algorithm details so show using a picture and explain how your algorithm works.  I don't  understand how 3.5 is an algorithm method.}
-    \fei{Why is this interesting as an algorithm?  }
+    % \fei{You cannot use his work, but have to write in your own words.  If you are going to talk about AnDri which is not your work, then describe this in Background chapter.  Move 3.2 to Background. }
+    % \fei{Describe your methodology using a picture to show what is the problem, and then a picture showing your solution (framework).  This chapter is all about the algorithm details so show using a picture and explain how your algorithm works.  I don't  understand how 3.5 is an algorithm method.}
+    % \fei{Why is this interesting as an algorithm?  }
 
 This chapter describes the methodological workflow used in this project to detect anomalies in time series with concept drift. The chapter builds on the prior AnDri method, which provides the dynamic normal-pattern model and the anomaly scoring mechanism \citep{park2025andri,park2025adaptive}. The focus here is the end-to-end detection methodology implemented in the demo system: score generation, normal-pattern-aware thresholding, active-learning-based label refinement, and final anomaly decision making. While anomaly scores and normal-pattern assignments are obtained from existing detectors such as AnDri, the adaptive threshold refinement framework, Bayesian mixture-based threshold estimation, active-learning candidate selection strategy, and pattern-specific threshold assignment were designed and implemented in this project.
 

@@ -64,6 +64,8 @@ In this report, \textbf{AnDri algorithm} refers to the anomaly detection algorit
 
 \section{Project Goals}
 
+The main objective of this project is to present the AnDri algorithm through an interactive demonstration platform. AnDri addresses the issue of anomaly detection in the context of concept drift by simulating changing normal patterns and generating anomaly scores for time series data. However, the output of the algorithm alone is not easily understandable for users. Therefore, this project has built an interactive system that enables users to intuitively explore the input time series, examine the detected anomaly candidates, observe the changes in normal behavior, and understand how AnDri distinguishes anomalies from concept drift. The second objective is to assist in "human-machine collaborative" anomaly detection through user feedback. When there is concept drift in the data, selecting the threshold for anomaly scores is difficult. Therefore, this system allows users to review the candidate results and provide feedback on whether the selected points or areas should be regarded as anomalies or normal. Then, these feedbacks will be used to adjust the detection threshold and improve the final anomaly determination results. The ultimate goal is to evaluate and showcase the workflow of the entire AnDri system. The platform integrates functions such as dataset loading, training area selection, anomaly annotation, AnDri execution, baseline comparison, candidate review, threshold adjustment, and result visualization.
+
 
 \section{Contributions}
 
@@ -83,3 +85,5 @@ Integrated AnDri, NormA, SAND, and DAMP into a unified workflow and conducted co
 \end{enumerate}
 
 
+\section{Organization}
+The organizational structure of the remaining part of this report is as follows. Chapter 2 introduces the basic concepts necessary for understanding this project, including time series data, time series anomalies, concept drift, subsequence similarity, normal patterns, and active learning. Chapter 3 reviews the related work on time series anomaly detection and concept drift adaptation, with a focus on methods such as NormA, SAND, DAMP, etc., which are related to the AnDri system. Chapter 4 presents the methods adopted in this project, including anomaly score generation, adaptive threshold refinement, candidate review based on active learning, and final anomaly decision-making. Chapter 5 describes the system design and implementation of the interactive platform, including the front-end workflow, Flask backend, data pipeline, visualization components, baseline integration, and deployment settings. Chapter 6 introduces the experimental setup, datasets, evaluation metrics, case studies, and comparison results. Finally, Chapter 7 summarizes the report and discusses future work.
