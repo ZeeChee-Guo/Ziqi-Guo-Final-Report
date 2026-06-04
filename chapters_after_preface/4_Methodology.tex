@@ -131,9 +131,8 @@ where a larger score indicates stronger evidence of abnormality. In the implemen
 
 AnDri algorithm also assigns each point to a normal pattern index:
 \[g(i) \in \{1,2,\ldots,m\},\]
-where \(g(i)\) indicates the normal pattern that best matches point \(i\). AnDri sets thresholds separately for different normal patterns instead of using a single global threshold.
+where \(g(i)\) indicates the normal pattern that best matches point \(i\). 
 
-For comparison, NormA, SAND, and DAMP are also integrated into the same workflow \citep{boniol2021norma,boniol2021sand,lu2022damp}. These methods generate normalized anomaly scores. The baseline algorithms applies one adaptive threshold, while AnDri applies normal-pattern-specific thresholds.
 
 \section{Adaptive Threshold with User Labels}
 
@@ -142,8 +141,7 @@ The system maintains a label flag \(f_i\) for each point. Initially, all the poi
 f_i =
 \begin{cases}
 0, & \text{unlabeled},\\
-1, & \text{user-marked anomaly},\\
-2, & \text{user-confirmed normal}.
+1, & \text{user-marked anomaly}
 \end{cases}
 \]
 The purpose of the adaptive thresholding step is to estimate a threshold \(\theta\) from the user-marked anomaly scores. The final decision is
