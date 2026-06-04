@@ -28,7 +28,18 @@ Although multivariate time-series anomaly detection is an important research dir
 
 \section{Time Series Anomalies}
 
-An anomaly is an observation or pattern that does not conform to the expected behavior of the data \citep{chandola2009anomaly}. There are three common types of time-series anomalies, including point anomalies, subsequence anomalies, and contextual anomalies \citep{chandola2009anomaly,schmidl2022anomaly}. A point anomaly is a single value that differs significantly from nearby or expected values. A subsequence anomaly, also related to the idea of a collective anomaly, occurs when a consecutive segment has an unusual shape or pattern, even if each individual point is not extreme \citep{chandola2009anomaly}. A contextual anomaly depends on the surrounding situation: for instance, a high heart rate may be normal during exercise but abnormal during rest \citep{chandola2009anomaly}. In this report, anomaly detection is mainly considered at the subsequence level.
+An anomaly is an observation or pattern that does not conform to the expected behavior of the data \citep{chandola2009anomaly}. There are three common types of time-series anomalies, including point anomalies, subsequence anomalies, and contextual anomalies \citep{chandola2009anomaly,schmidl2022anomaly}. A point anomaly is a single value that differs significantly from nearby or expected values. A subsequence anomaly, also related to the idea of a collective anomaly, occurs when a consecutive segment has an unusual shape or pattern, even if each individual point is not extreme \citep{chandola2009anomaly}. In this report, anomaly detection is mainly considered at the subsequence level.
+
+Figure~\ref{fig:20} illustrates the difference between a point anomaly and a subsequence anomaly using a synthetic univariate time series resembling an ECG signal. The point anomaly appears as a single extreme value, while the subsequence anomaly appears as a short segment whose shape differs from the surrounding normal pattern. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{figures/schmidl_anomaly_example.png}
+    \caption{Example of point and subsequence anomalies in a time series \citep{schmidl2022anomaly}.}
+    \label{fig:20}
+\end{figure}
+
+
 
 
 \section{Concept Drift}
@@ -52,9 +63,3 @@ A normal pattern is a representative subsequence or group of subsequences that d
 Active learning requests labels for selected uncertain data points instead of complete labels for all the dataset \citep{settles2009active}. This idea is related to human-in-the-loop machine learning, where human expertise is incorporated into the learning or decision-making process through feedback, correction, validation, or annotation \citep{amershi2014power,holzinger2016interactive}. The design is especially useful when fully automatic decisions are unreliable because the task requires domain knowledge. 
 
 For anomaly detection with concept drift, partial user feedback is valuable because automatic scores alone may not fully determine whether a changed pattern is abnormal or newly normal. A user can confirm true anomalies, reject false positives, or validate candidate normal patterns. In this report, human feedback is used for refining anomaly thresholds and improving the distinction between abnormal events and drift-driven normal changes.
-
-\section{AnDri Algorithm as Project Background}
-
-AnDri itself is also a time-series anomaly detection algorithm designed for environments where normal behavior changes over time because of concept drift \citep{park2025andri,park2025adaptive}. Traditional anomaly detection methods usually compare new data against a fixed definition of normal behavior, which can incorrectly treat new operating conditions as anomalies. AnDri addresses this problem by updating the reference normal patterns dynamically.
-
-AnDri algorithm detects anomalies and concept drift together\cite{park2025adaptive}. The algorithm maintains a set of normal patterns and compares incoming subsequences against the relevant known patterns. This allows the algorithm to distinguish temporary abnormal events from long-term changes in normal behavior.
