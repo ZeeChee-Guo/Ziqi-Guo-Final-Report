@@ -134,63 +134,6 @@ AnDri algorithm also assigns each point to a normal pattern index:
 where \(g(i)\) indicates the normal pattern that best matches point \(i\). 
 
 
-\section{Adaptive Threshold with User Labels}
-
-The system maintains a label flag \(f_i\) for each point. Initially, all the points are unlabeled. A user can mark points as anomaly or normal points:
-\[
-f_i =
-\begin{cases}
-0, & \text{unlabeled},\\
-1, & \text{user-marked anomaly}
-\end{cases}
-\]
-The purpose of the adaptive thresholding step is to estimate a threshold \(\theta\) from the user-marked anomaly scores. The final decision is
-\[
-\hat{y}_i =
-\begin{cases}
-1, & s_i > \theta,\\
-0, & s_i \leq \theta.
-\end{cases}
-\]
-
-The demo also allows the user to provide an expected anomaly proportion \(\rho\). This value is used to compute a score cutoff \(q_{\rho}\), corresponding to the boundary of the top \(\rho\) percent of scores in the selected training region. This prevents the threshold from becoming too low when only a small number of anomaly labels are provided.
-
-To model the marked anomaly scores, the backend fits a two-component Bayesian Gaussian mixture model:
-\[p(s)=\sum_{k=1}^{2}\pi_k \mathcal{N}(s;\mu_k,\sigma_k^2).\]
-Only mixture components with weight greater than a small threshold are treated as active. If fewer than two active components remain, the labeled anomaly scores are considered stable, and the threshold is set using both the mixture statistics and the anomaly-proportion cutoff:
-\[\theta = \max(q_{\rho}, \mu-\sigma).\]
-Here \(\mu\) and \(\sigma\) describe the active anomaly-score component. This rule keeps the threshold consistent with the expected anomaly proportion while also adapting to the user-confirmed anomalies.
-
-
-
-
-\section{Active Learning for Ambiguous Scores}
-
-When two active Gaussian components are found, it means the current user labels do not yet separate normal and abnormal score regions clearly. The system then computes the intersection between adjacent Gaussian components:
-\[\pi_a \mathcal{N}(x;\mu_a,\sigma_a^2) = \pi_b \mathcal{N}(x;\mu_b,\sigma_b^2).\]
-Scores near this intersection are the most uncertain because the two components assign them similar likelihood. The system searches for unlabeled points in this uncertainty region and asks the user to classify them as anomalies or normal points. To keep the interaction manageable, the implementation limits each review round to at most 20 candidate points. If too many points are found, the uncertainty window is narrowed; if too few are found, it is widened.
-
-The active-learning loop has two correction steps. First, if a point previously marked as an anomaly has a low score below the top-\(\rho\) cutoff, the system asks whether it should be removed from the anomaly set. This catches possible false anomaly labels. Second, the system asks the user to label points near the mixture intersection, because these points have the greatest effect on the threshold. After each feedback round, the mixture model is refit and the threshold is updated. The loop stops when the score distribution becomes stable or when no additional uncertain candidates are found.
-
-\section{Pattern-Specific Thresholds for AnDri}
-
-The AnDri estimates a separate threshold for each normal pattern from the training set. Let \(A\) be the set of user-selected training indices. For each normal pattern \(k\), the training indices assigned to that pattern are
-\[A_k = \{i \in A \mid g(i)=k\}.\]
-The system fits the same Bayesian mixture and active-learning procedure on the scores in \(A_k\), using only the user labels associated with that normal-pattern group. This produces a threshold \(\theta_k\) for normal pattern \(k\).
-
-The final AnDri decision is therefore
-\[
-\hat{y}_i =
-\begin{cases}
-1, & s_i > \theta_{g(i)},\\
-0, & s_i \leq \theta_{g(i)}.
-\end{cases}
-\]
-
-If a point belongs to a normal pattern that was not present in the user-selected training region, the implementation gets the threshold from the most similar trained normal pattern. The nearest trained pattern is selected by Euclidean distance between normal-pattern subsequences:
-\[k^*=\arg\min_{j \in K_{\text{train}}} \|NM_k-NM_j\|_2,\]
-and the missing threshold is assigned as \(\theta_k=\theta_{k^*}\).
-
 \section{Overall Workflow}
 
 The overall methodology can be summarized as follows.
@@ -311,3 +254,97 @@ points near Gaussian intersection};
 
 
 This methodology connects the algorithmic score output with the interactive system workflow. The backend produces normalized scores and, for AnDri, normal-pattern assignments. The frontend uses those values to guide user to review and then present final decisions. In this way, the system does not rely only on a static cutoff. Instead, it uses partial human feedback to adapt the decision boundary and uses AnDri's normal-pattern structure to make the threshold sensitive to concept drift.
+
+
+
+\section{Dynamic Threshold Setting with User Feedback}
+
+After anomaly scores are generated, the key methodological step is to convert the continuous score sequence into binary anomaly labels. The system combines an initial anomaly-proportion estimation, user-marked anomaly points, Bayesian mixture fitting, and candidate review to dynamically refine the final decision threshold.
+
+Let \(\rho \in [0,1]\) be the maximum allowable anomaly proportion specified by the user. This parameter provides a proportion-based constraint during threshold estimation. For example, when \(\rho=0.05\), it means that at most \(5\%\) of points with the highest anomaly scores would be classified as anomalies in the final stage.
+
+At the beginning of the interaction, the user marks anomaly points. The system maintains a label state
+\[
+f_i =
+\begin{cases}
+0, & \text{unlabeled},\\
+1, & \text{user-confirmed anomaly},\\
+2, & \text{user-confirmed normal}.
+\end{cases}
+\]
+Only the scores of user-confirmed anomalies are used to estimate the anomaly-score distribution. Points with \(f_i=2\) are not used as normal training examples for fitting the Bayesian model; they are removed from the candidate anomaly set and excluded from future uncertain-candidate queries. They are regarded as erroneous labels made by the users.
+
+Given the current confirmed anomaly set \(L=\{i\in A\mid f_i=1\}\), the backend fits a two-component Bayesian Gaussian mixture model to the marked anomalies' scores:
+\[
+p(s)=\sum_{k=1}^{2}\pi_k\mathcal{N}(s;\mu_k,\sigma_k^2).
+\]
+
+It is worth noting here that the Bayesian Gaussian mixture model is not used to separate normal and anomalous points. It is applied to the scores of user-confirmed anomalies to assess whether the labeled anomalies form a stable single distribution or multiple competing score groups.
+
+A component is treated as active only when its mixture weight is larger than a small weight threshold. If the Bayesian mixture has only one active components, the marked anomaly scores are considered stable. The threshold is then set as
+\[
+\theta=\max(\theta_{\rho},\mu_a-\sigma_a),
+\]
+where \(\mu_a\) and \(\sigma_a\) are the mean and standard deviation of the stable active anomaly-score component.
+
+If two active components remain, the system regards the current threshold as uncertain. It then selects candidate points for user review in two ways. First, if a user-marked anomaly has a score below \(\theta_{\rho}\), the system asks the user whether this point should remain an anomaly. This step removes possible low-score mislabels. Second, the system finds the intersection region between the two active Gaussian components and asks the user to confirm unlabeled points near this uncertain boundary. If the user confirms a candidate, its flag becomes \(f_i=1\); if the user rejects it, its flag becomes \(f_i=2\). After each review round, the Bayesian mixture is refitted and the threshold is updated.
+
+For the baseline detectors, including NormA, SAND, and DAMP, this process produces one global threshold. For AnDri, the same threshold-setting procedure is applied separately to each normal-pattern group in the selected training region. Let \(g(i)\) be the normal-pattern index assigned to point \(i\). For pattern \(k\), the training subset is
+\[
+A_k=\{i\in A\mid g(i)=k\}.
+\]
+The system estimates a pattern-specific threshold \(\theta_k\) using only the scores and user feedback associated with \(A_k\). The final AnDri prediction is
+\[
+\hat{y}_i =
+\begin{cases}
+1, & s_i>\theta_{g(i)},\\
+0, & s_i\leq \theta_{g(i)}.
+\end{cases}
+\]
+If a test point belongs to a normal pattern that was not present in the selected training region, the system assigns the threshold of the most similar trained normal pattern, measured by Euclidean distance between normal-pattern subsequences.
+
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    flowbox/.style={
+        rectangle,
+        draw,
+        thick,
+        rounded corners=1pt,
+        fill=blue!25,
+        minimum width=6.4cm,
+        minimum height=0.75cm,
+        align=center,
+        font=\small
+    },
+    note/.style={font=\small, align=left},
+    arrow/.style={-{Latex}, thick},
+    callout/.style={densely dashed, blue!70!black, thick}
+]
+
+\node[flowbox] (p1) {1. Set anomaly proportion \(\rho\)};
+\node[flowbox, below=0.85cm of p1] (p2) {2. Mark initial anomaly points};
+\node[flowbox, below=0.85cm of p2] (p3) {3. Fit Bayesian mixture to marked anomaly scores};
+\node[flowbox, below=0.85cm of p3] (p4) {4. Review uncertain candidate points};
+\node[flowbox, below=0.85cm of p4] (p5) {5. Finalize threshold and anomaly labels};
+
+\draw[arrow] (p1) -- (p2);
+\draw[arrow] (p2) -- (p3);
+\draw[arrow] (p3) -- (p4);
+\draw[arrow] (p4) -- (p5);
+
+\draw[callout] (p1.east) -- ++(1.0,0)
+node[note, right, black] {Top \(\rho\) score cutoff};
+\draw[callout] (p3.east) -- ++(1.0,0)
+node[note, right, black] {Bayesian Gaussian mixture};
+\draw[callout] (p4.east) -- ++(0.8,0) |- ++(0.35,0.35)
+node[note, right, black] {Low-score marked anomalies};
+\draw[callout] (p4.east) -- ++(0.8,0) |- ++(0.35,-0.35)
+node[note, right, black] {Scores near mixture intersection};
+
+\end{tikzpicture}
+\caption{Overview of dynamic threshold setting with user feedback.}
+\label{fig:dynamic_threshold_overview}
+\end{figure}
