@@ -8,9 +8,7 @@ This chapter describes the implementation of the AnDri demonstration system. The
 
 \section{System Overview and Architecture}
 
-AnDri is a browser-based interactive system with a Python Flask backend and a nature JavaScript front-end. The system provides the users the full time series, zoom into local regions, mark candidate anomalies, inspect normal patterns, and compare the behavior of multiple algorithms in the workflow.
-
-The system has three main layers. The first layer is the user interface in \textbf{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \textbf{app.py} and the blueprint in \textbf{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \textbf{utils/ml.py} and the \textbf{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD ecosystem, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
+AnDri is a browser-based interactive system with a Python Flask backend and a nature JavaScript front-end. The system has three main layers. The first layer is the user interface in \textbf{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \textbf{app.py} and the blueprint in \textbf{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \textbf{utils/ml.py} and the \textbf{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD benchmark suite, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
 
 \begin{figure}[H]
 \centering
@@ -74,13 +72,11 @@ AnDri scoring, baseline integration, and normal-pattern output};
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/architecture.png}
-    \caption{Overall workflow and architecture of the AnDri demo system.}
+    \caption{Overall workflow of the AnDri demo system \citep{park2025andri}.}
     \label{fig52}
 \end{figure}
 
-This architecture keeps the backend stateless and avoids the need for a database or session. Each detection request sends the current newest state to the server. The server then computes and returns the result to the browser.
-
-The architecture also reflects the goal of the project. AnDri is not only a backend detector that produces a list of anomalous indices. It is also an interactive visual analytics system for co-exploring anomalies and concept drift. Therefore, the front-end must preserve enough state to show how the user selected training regions, how candidate labels were updated, how thresholds changed, and how each algorithm behaved on the same dataset.
+This architecture keeps the backend stateless and avoids the need for a database or session. Each detection request sends the current newest state to the server. The server then computes and returns the result to the browser. The architecture also reflects the goal of the project. AnDri is an interactive visual analytics system for co-exploring anomalies and concept drift. Therefore, the front-end must preserve enough state to show how the user selected training regions, how candidate labels were updated, how thresholds changed, and how each algorithm behaved on the same dataset.
 
 
 \section{Front-End Interface and Visualization}
@@ -141,13 +137,11 @@ The system reports four evaluation values in the interface: precision, recall, F
 Figure~\ref{fig57} shows the final result comparison page. The left side summarizes quantitative results and experiment parameters. The right side compares representative anomaly and drift regions across AnDri, NormA, SAND, and DAMP.
 
 \section{Deployment}
-The system was deployed on a school server to provide accessibility. The supervisors and lab-mates can inspect the demo through their own browser.  The deployment also served as a software engineering learning experience. Building the local demo required integrating algorithms, data processing, and visualization; deploying it required understanding a different set of engineering concepts, including web-server configuration, reverse proxy, static-resource handling, dependency management, request-size limits, file permissions, server paths, and runtime logs.
+The system was deployed on a school server to provide accessibility. The supervisors and lab-mates can inspect the demo through their own browser.  The deployment also served as a software engineering learning experience. Building the local demo required integrating algorithms, data processing, and visualization; deploying it required understanding a different set of engineering concepts, including web-server configuration, reverse proxy, static-resource handling, dependency management, request-size limits, file permissions, server paths, process restarts and runtime logs.
 
 The application entry point is the Flask application defined in \textbf{app.py}. At startup, the application creates the Flask instance, registers the backend blueprints, sets a maximum upload size for large time-series files, and serves the main interface through the root route. The latest repository also checks whether the optional NormA implementation exists under \textbf{algorithms/norma/norma.py}. This is necessary because the NormA implementation is not included directly in the repository, while the remaining algorithms can still be used without it. This design allows the same interface to support different baseline algorithms depending on which optional components are available in the runtime environment.
 
-The runtime workflow is interactive rather than a one-time batch process. After the initial results are displayed, the user can select training regions, mark anomalous points, remove incorrect labels, or repeat the workflow with other algorithms. Each feedback action updates the browser-side state and, when necessary, sends a request back to the Flask backend. The backend computes revised scores, fitted label distributions, or similar-pattern matches and returns the results to the browser. This interaction is important for AnDri because the system is designed to support anomaly and drift co-exploration, not only to produce a static list of detected points.
-
-Figure~\ref{fig58} illustrates the server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the public-facing web server and reverse proxy. NGINX is commonly used as an HTTP server and reverse proxy, and it can also serve static resources efficiently \citep{nginx}. Dynamic requests are forwarded to the Python application process managed by Gunicorn, a Python WSGI HTTP server that can run Flask applications in a production-style environment \citep{gunicorn,flask}.
+Figure~\ref{fig58} illustrates the server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the reverse proxy. NGINX is commonly used as an HTTP server and reverse proxy, and it can also serve static resources efficiently \citep{nginx}. Dynamic requests are forwarded to the Python application process managed by Gunicorn, a Python WSGI HTTP server that can run Flask applications in a production-style environment \citep{gunicorn,flask}.
 
 \begin{figure}[H]
     \centering
@@ -156,4 +150,4 @@ Figure~\ref{fig58} illustrates the server-side deployment pattern. In this archi
     \label{fig58}
 \end{figure}
 
-This separation is useful because static files can be handled and cached independently, while computational requests such as dataset loading, anomaly detection, label submission, threshold recalculation, and similar-pattern search are processed by the backend. A server deployment also requires more careful management of package versions, file permissions, upload limits, static-resource paths, process restarts, and runtime logs.
+This separation is useful because static files can be handled and cached independently, while computational requests such as dataset loading, anomaly detection, label submission, threshold recalculation, and similar-pattern search are processed by the backend.
