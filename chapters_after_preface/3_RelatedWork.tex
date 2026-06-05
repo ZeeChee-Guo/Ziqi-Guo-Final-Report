@@ -36,3 +36,14 @@ AnDri is an anomaly detection algorithm designed for time series with concept dr
 This algorithm first learns normal patterns from the initial training region. It uses the adjacent hierarchical clustering (AHC) method to group similar subsets while simultaneously considering their temporal proximity. This allows the algorithm to identify normal patterns occurring within a given period, rather than assuming that all normal patterns must appear frequently throughout the entire time series. During the detection process, each new subseries is compared to the currently active normal patterns. If the subsequence is similar to the active pattern, it is regarded as part of the current normal behavior. If an old pattern becomes relevant again, it can be reactivated. If recent subsequences do not match any of the existing active patterns but persist within the recent window, Andri may consider them as new normal patterns caused by concept drift. Otherwise, these subsequences are regarded as abnormal candidate patterns. The anomaly score is calculated based on the distance between the current subsequence and the most similar active normal pattern. This is different from methods such as NormA, which compare subsequences with a more static set of learned normal patterns. By focusing on the active normal behaviors, Andri can more accurately distinguish between true abnormal behaviors and changes in normal behaviors caused by drift.
 
 The main advantage of Andri is to explicitly model the lifecycle of normal patterns. This makes it more suitable for time series data where normal behaviors change, disappear, or reappear over time. In this report, Andri is regarded as the algorithm foundation of the Andri system, while subsequent chapters focus on the implemented interactive workflow, visualization, threshold adjustment, and system deployment.
+
+
+\section{Anomaly Score Generation}
+
+Anomaly detect algorithms mentioned in this report generate anomaly scores for each data point
+\[S=[s_1,s_2,\ldots,s_n],\]
+where a larger score indicates stronger evidence of abnormality. In the implementation, scores are normalized to the interval \([0,1]\).
+
+AnDri algorithm also assigns each point to a normal pattern index:
+\[g(i) \in \{1,2,\ldots,m\},\]
+where \(g(i)\) indicates the normal pattern that best matches point \(i\). 
