@@ -6,9 +6,9 @@
 This chapter describes the implementation of the AnDri demonstration system. The system was designed to let a user upload or select a time-series dataset, inspect the data visually, select training regions, mark anomalies, run AnDri and baseline detectors, review uncertain candidates, and compare the final detection results. Interactive visualizations are integrated into each stage of the workflow.
 
 
-\section{System Overview and Architecture}
+\section{System Architecture}
 
-AnDri is a browser-based interactive system with a Python Flask backend and a nature JavaScript front-end. The system has three main layers. The first layer is the user interface in \textbf{templates/index.html}, which contains the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \textbf{app.py} and the blueprint in \textbf{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, which is implemented in \textbf{utils/ml.py} and the \textbf{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD benchmark suite, and optionally NormA when the external proprietary implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
+AnDri is a browser-based interactive system that uses Python Flask as the backend and natural JavaScript as the frontend. This system consists of three main layers: The first layer is the user interface in \textbf{templates/index.html}, which includes the visual layout, upload dialog window, control panel, algorithm tabs, and ECharts-based visualizations \cite{apacheecharts}. The second layer is the Flask API layer, implemented through \textbf{app.py} and the blueprint in \textbf{blueprints/detect\_anomalies/routes.py}. The third layer is the detection and scoring layer, implemented by \textbf{utils/ml.py} and the \textbf{algorithms/andri/} package. The scoring layer integrates AnDri with baseline methods, including SAND and DAMP from the TSB-UAD benchmark suite, and optionally NormA when the external confidential implementation is available \citep{boniol2021norma,boniol2021sand,lu2022damp,paparrizos2022tsbuad}.
 
 \begin{figure}[H]
 \centering
@@ -69,20 +69,25 @@ AnDri scoring, baseline integration, and normal-pattern output};
 
 \noindent The implemented architecture separates interaction, routing, and computation. The browser reads the selected or uploaded dataset, stores the time-series values, labels, user-selected training regions, current flags, and threshold state, and renders all charts. The backend is responsible for computational work such as running AnDri and baseline detectors, fitting the Bayesian Gaussian mixture model for user labels, computing AUC values, and finding similar normal patterns using time-series similarity search.
 
+This architecture keeps the backend stateless and avoids the need for a database or session. Each detection request sends the current newest state to the server. The server then computes and returns the result to the browser. The architecture also reflects the goal of the project. AnDri is an interactive visual analytics system for co-exploring anomalies and concept drift. Therefore, the front-end must preserve enough state to show how the user selected training regions, how candidate labels were updated, how thresholds changed, and how each algorithm behaved on the same dataset.
+
+
+
+\section{System Workflow}
+
+Figure~\ref{fig:52} summarizes the complete workflow of the AnDri demo system. The workflow begins with loading a dataset and setting the allowed anomaly proportion. The user then selects training regions from the time series and marks initial anomaly points through the interactive frontend. After these user inputs are collected, the backend computes anomaly scores by learning temporal normal patterns, updating normal-pattern states online, and assigning point-level anomaly scores. The frontend then supports an active-learning feedback loop, where the user reviews candidate points, corrects possible labeling mistakes, and adds missing anomaly labels. Finally, the system uses the refined threshold to detect anomalies and concept drifts, and presents both quantitative metrics and visual comparison results.
+
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/architecture.png}
     \caption{Overall workflow of the AnDri demo system \citep{park2025andri}.}
-    \label{fig52}
+    \label{fig:52}
 \end{figure}
 
-This architecture keeps the backend stateless and avoids the need for a database or session. Each detection request sends the current newest state to the server. The server then computes and returns the result to the browser. The architecture also reflects the goal of the project. AnDri is an interactive visual analytics system for co-exploring anomalies and concept drift. Therefore, the front-end must preserve enough state to show how the user selected training regions, how candidate labels were updated, how thresholds changed, and how each algorithm behaved on the same dataset.
+\subsection{Dataset Upload and Initialization}
 
-
-\section{Front-End Interface and Visualization}
-
-The front-end is organized around a left control panel and a right visualization area. The control panel guides the user through the workflow. The implementation uses Apache ECharts for browser-side rendering \citep{apacheecharts}. ECharts can render line charts, pie charts, and histograms in the frontend browser, and supports zoom controls, brush area selections, highlighted regions, and marking points within selected areas. In the implementation, the full-data chart uses progressive rendering thresholds for long series, and both charts use interactive data zoom so that users can move between the full context and local details. Training regions are shown as shaded areas, candidate anomalies are colored, and score thresholds are drawn directly on score charts. These design choices make the workflow visual rather than script-driven.
-
+The workflow begins with the dataset upload interface shown in Figure~\ref{fig54}. The user can either select a built-in example dataset or upload a local file. The interface also asks for the maximum allowable anomaly proportion $\alpha$, which provides a constraint on how many points may reasonably be treated as anomalies. 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.82\textwidth]{figures/uploadDataset.png}
@@ -90,26 +95,96 @@ The front-end is organized around a left control panel and a right visualization
     \label{fig54}
 \end{figure}
 
-Figure~\ref{fig55} shows the training-set selection stage. The left panel records the selected training intervals and the number of training points. The right panel displays both the global view and the local view, allowing the user to select regions that represent normal behavior or regions where additional labels should be collected.
+After the dataset is loaded, the frontend parses the time-series values and ground truth labels, initializes the main chart panels, and stores the current user state in browser-side arrays. The system then moves from data loading to interactive region selection.
+
+
+\subsection{Selecting Regions and Marking Anomaly Points}
+
+The user selects training regions in the next stage. Figure~\ref{fig55} shows the region-selection interface. The implementation was designed to make this step easy to use even for long time series. The upper chart gives a global overview, and the lower chart gives a detailed view of the selected range. In the JavaScript implementation, the lower chart uses ECharts' inside data zoom, so the user can use the mouse wheel to zoom in and out directly on the chart. The selected training interval is implemented as a horizontal brush region. The user can drag the brush edges to resize the interval, and the frontend updates the stored \textbf{brushAreas} array immediately after the brush event. The user can also click a location in the global chart to navigate the detailed chart to that region. The user can select training regions visually instead of manually entering start and end indices.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/selectTrainingSet2.png}
-    \caption{Training-set selection interface.}
+    \caption{Training-region selection interface. The user can zoom with the mouse wheel and drag the highlighted region to adjust the selected interval.}
     \label{fig55}
 \end{figure}
 
-After selecting training regions, the user starts to label the anomalies. The interface allows the user to drag over the detailed chart to mark sequential anomaly regions. The selected anomalies are stored as labels in the browser-side flag array. The system can then use these labels to estimate an initial decision threshold and to identify candidate points that require further review.
+After the user finishes selecting the training regions, the interface changes to the anomaly-marking phase, as shown in Figure~\ref{fig56}. The user can click the global chart to navigate to a local region, use the mouse wheel to inspect the detailed chart at a suitable scale, and then drag directly on the lower chart to mark sequence anomalies. In the JavaScript code, the anomaly-marking button enables a sequential marking mode. While this mode is active, the system temporarily disables chart zooming, listens for mouse down, mouse move, and mouse up events, draws a temporary rectangle over the selected range, converts the selected pixel range back to time-series indices, and updates the corresponding entries in the browser-side \textbf{flags} array as anomaly labels. The red points in the chart indicate the points that have been marked by the user. The interface also provides an undo button, which makes the labeling process more forgiving when the user selects an incorrect region. Here, users can use the right mouse button to unmark the anomalies. This is done to facilitate users' more precise control.
 
-Then the user will be asked to classify uncertain candidates as anomalies or normal points. The histogram shows the distribution of marked anomaly scores and the current threshold. The time-series panels show candidate points in context, and normal-pattern overlays help the user understand whether a suspicious region differs from expected behavior.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/selectAnomalies.png}
+    \caption{Anomaly-marking interface. The user can zoom to a local region and drag across the detailed chart to mark anomalies.}
+    \label{fig56}
+\end{figure}
 
+The selected anomaly labels are later used to estimate and refine the anomaly-score threshold. Because both training selection and anomaly marking are completed through mouse-based chart interactions, the system reduces the need for manual index lookup and makes the workflow more accessible to users who want to inspect the time series visually. 
+
+
+
+\subsection{Candidate Feedback and Label Correction}
+
+After the initial anomaly labels are provided, the system asks the user to review candidate points. Figure~\ref{fig57} shows this feedback interface. The left panel contains the anomaly score distribution, the current threshold, and a TP/FP pie chart. The anomaly score distribution shows how the scores of user-marked anomalies are distributed, while the vertical threshold line shows the current decision boundary. The TP/FP pie chart summarizes how many marked anomaly points are currently consistent or inconsistent with the system's estimated threshold.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/markMoreLabels.png}
-    \caption{Candidate review interface.}
-    \label{fig56}
+    \caption{Candidate feedback interface.}
+    \label{fig57}
 \end{figure}
+
+The right side of Figure~\ref{fig57} gives the user the local context needed for feedback. It contains three coordinated charts for the same candidate-review step. The top chart focuses on the current candidate region. It overlays the most similar normal pattern on top of the original time-series segment, and marks the candidate anomaly points in purple. This view helps the user judge whether the candidate region truly deviates from normal behavior or whether it still follows an existing normal pattern. If a point was marked as an anomaly but closely follows the normal-pattern overlay, the system can suggest that it may be a mislabeled anomaly.
+
+The way to find a similar normal pattern is as follows. For a candidate subsequence $q$ and a set of learned normal patterns $\mathcal{N}=\{N_1,N_2,\ldots,N_m\}$, the backend searches for the normal pattern and alignment position with the smallest subsequence distance:
+\[
+(N^{*}, \tau^{*}) =
+\arg\min_{N_j \in \mathcal{N},\, \tau}
+d\bigl(q, N_j[\tau:\tau+|q|-1]\bigr).
+\]
+Here, $d(a,b)$ denotes the z-normalized Euclidean distance between two equal-length subsequences $a$ and $b$:
+\[d(a,b)=\|z(a)-z(b)\|_2,\]
+where $z(\cdot)$ normalizes a subsequence to zero mean and unit variance. In the implementation, this distance profile is computed using \texttt{stumpy.mass}, which is provided by the STUMPY time-series data mining library \citep{law2019stumpy}. The selected normal pattern $N^{*}$ is then aligned at position $\tau^{*}$ and overlaid on the candidate region.
+
+
+
+
+The middle chart shows the positions of the candidate points in a broader time series. This view answers another question: Where exactly do these candidate points occur within the entire dataset? By displaying the candidate points along with their surrounding values, users can determine whether the suspicious points occur independently, repeatedly, or in the drift area of the time series. 
+
+The bottom figure shows the anomaly score curve of the same data. The purple markers identify the candidate points on the score curve, allowing users to directly compare their own anomaly scores with the surrounding scores. If the scores in the unmarked areas are higher and differ from the current normal pattern, the system can ask the user if it should be added as an anomaly point. Conversely, if the marked points have lower anomaly scores and are consistent with the normal pattern, the system suggests that they be regarded as normal points. These three coordinated views collectively present the candidate anomalies themselves, their positions in the time series, and the evidence of their anomaly scores.
+
+The feedback buttons allow the user to classify each candidate as either an anomaly or a normal point. After every user decision, the frontend updates the browser-side label state and calls the label-fitting function again. As a result, both the TP/FP pie chart and the anomaly-score distribution with the threshold line are refreshed immediately. This gives the user direct visual feedback about the effect of the latest decision: the pie chart shows whether the decision reduces false positives or confirms more true positives, while the updated threshold display shows how the decision changes the current separation between normal and anomalies scores.
+
+This iterative update is useful because the user does not need to wait until the end of the workflow to understand whether the feedback is helping. Each click on the \textit{Anomalies} or \textit{Normal Points} button changes the label set, recomputes the score-based threshold, and updates the visual summaries. Through this loop, the threshold is refined from user feedback rather than being treated as a fixed value chosen before visualization.
+
+
+\subsection{Final Result Review and Baseline Comparison}
+
+After the user applied this system to Andri and three baseline methods and completed the candidate-feedback loop, the system enters the final testing-result phase. The interface hides the candidate-review controls and displays the algorithm tabs, the accuracy-comparison table, the normal-pattern panel, and the detected-anomaly panel. Figure~\ref{fig58} shows the result page that is displayed before the user opens the comparison tab.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/andri_anomaly1.png}
+    \caption{Final result-review interface showing the accuracy table, representative normal patterns, and anomaly examples.}
+    \label{fig58}
+\end{figure}
+
+The left side of Figure~\ref{fig58} reports quantitative results for AnDri and the baseline methods, including precision, recall, and F1-score. The right side supports visual inspection of the result. For AnDri, the system displays learned normal patterns in the upper panels and anomaly examples associated with the selected normal pattern in the lower panels. The implementation renders these panels through the normal-pattern chart and anomaly chart. Users can switch between algorithms using the tabs and can use the arrow controls to move through different normal patterns and detected anomaly examples. This design makes the final result more interpretable than a metric table alone, because the user can inspect what kind of normal behavior the system has learned and what kind of subsequences are being treated as anomalies.
+
+The comparison view is shown after the user clicks the \textit{Comparison} tab. In the JavaScript code, the comparison-tab event handler hides the normal-pattern and anomaly-example sections, shows the comparison grid, fills the parameter table, and then initializes the comparison charts. This means that Figure~\ref{fig59} is not the default final-result page; it is a separate comparison mode used after the user requests cross-method analysis.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/andri_result.png}
+    \caption{Comparison interface shown after selecting the Comparison tab.}
+    \label{fig59}
+\end{figure}
+
+Figure \ref{fig59} presents the comparison interface of AnDri, NormA, SAND, and DAMP on the selected area. The upper part of the interface focuses on a truly anomalies area. In this case, the highlighted interval contains the behavior that should be detected as abnormal. AnDri assigns an abnormal score significantly higher than its determination threshold to this area. The corresponding score panel makes this judgment interpretable: users can not only see that AnDri marks this area as abnormal, but also clearly see that there is a large gap between the score and the threshold. The baseline score panel shows the responses of NormA, SAND, and DAMP to the same area, enabling users to compare whether each method generates similar intensity of abnormal signals or has a weaker response.
+
+The lower part of the interface focuses on false alarm correction. The highlighted area visually approaches normal behavior, but some baseline methods may still consider it abnormal because its local pattern is different from the early data or due to concept drift causing a change in the normal distribution. In this example, AnDri can more clearly distinguish this area. Its threshold remains high, while the abnormal score of this area remains at an extremely low level, far below the threshold, so AnDri does not mark this area as abnormal. This contrast is very important because it shows the normal mode management function of AnDri: when a certain area matches an active or repeatedly occurring normal mode, even if other methods generate suspicious scores, the system can avoid reporting it as abnormal. Therefore, the comparison tab helps users understand the two aspects of the detection behavior: AnDri can assign a high score to a real abnormality and maintain a low score for a normal area affected by drift, while keeping the score at an extremely low level far below the threshold.
+
+
+
 
 \section{Backend Architecture}
 The backend is implemented in Flask. The root route in \textbf{app.py} creates the main page and checks whether the optional NormA implementation exists under \textbf{algorithms/norma/norma.py}. This check is necessary because the NormA source file is not included directly in the repository. To use the source file, the user must get it from the author. AnDri, SAND, and DAMP are available.
@@ -121,33 +196,23 @@ The scoring functions in \textbf{utils/ml.py} are designed as wrappers around th
 The backend also supports the active-learning loop. The \textbf{fit\_user\_labels} function fits a two-component Bayesian Gaussian mixture model to the currently marked anomaly scores. It returns whether the score distribution is stable. If the score distribution is not stable, it also returns the uncertain candidates. The front-end then uses this information to ask the user for more labels. 
 
 
-\section{Data Upload and Preprocessing Pipeline}
-AnDri system supports both built-in example datasets and local user-provided datasets. The built-in examples are stored in \textbf{static/datasets/} and include Repeat ECG, Weather, and Electricity data. The available local formats are \textbf{.arff} and \textbf{.csv}. In the front-end parser, the system reads each row, extracts the time-series value and label from the last two columns, and stores them in two arrays: \textbf{fullData} for values and \textbf{baseline} for labels. After parsing, the system initializes the interactive charts and enters the training-set selection phase. 
-
-\section{Integration of Detection Results}
-The system reports four evaluation values in the interface: precision, recall, F1-score, and AUC.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{figures/andri_result.png}
-    \caption{Final comparison interface.}
-    \label{fig57}
-\end{figure}
-
-Figure~\ref{fig57} shows the final result comparison page. The left side summarizes quantitative results and experiment parameters. The right side compares representative anomaly and drift regions across AnDri, NormA, SAND, and DAMP.
-
 \section{Deployment}
-The system was deployed on a school server to provide accessibility. The supervisors and lab-mates can inspect the demo through their own browser.  The deployment also served as a software engineering learning experience. Building the local demo required integrating algorithms, data processing, and visualization; deploying it required understanding a different set of engineering concepts, including web-server configuration, reverse proxy, static-resource handling, dependency management, request-size limits, file permissions, server paths, process restarts and runtime logs.
+The system was deployed on a school server to provide convenient access. The supervisors and lab-mates can view the demo through their own browsers. This deployment also provides practical opportunities for the study of software engineering. Building the local demo requires integrating algorithms, data processing, and visualization functions; while the deployment process requires understanding a series of different engineering concepts, including Web server configuration, reverse proxy, static resource processing, dependency management, request size limit, file permissions, server path, process restart and runtime logs.
 
-The application entry point is the Flask application defined in \textbf{app.py}. At startup, the application creates the Flask instance, registers the backend blueprints, sets a maximum upload size for large time-series files, and serves the main interface through the root route. The latest repository also checks whether the optional NormA implementation exists under \textbf{algorithms/norma/norma.py}. This is necessary because the NormA implementation is not included directly in the repository, while the remaining algorithms can still be used without it. This design allows the same interface to support different baseline algorithms depending on which optional components are available in the runtime environment.
+The entry point of the web application is the Flask application defined in \textbf{app.py}. When starting, the application creates a Flask instance, registers the backend blueprints, sets the maximum upload size for time-series files, and provides the main interface through the root route. The system also checks whether the optional NormA implementation exists under \textbf{algorithms/norma/norma.py}. This is necessary because the NormA implementation is not directly included in the code repository, while the remaining algorithms can still be used without it. This design enables the same interface to support different baseline algorithms based on the available components in the runtime environment.
 
-Figure~\ref{fig58} illustrates the server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the reverse proxy. NGINX is commonly used as an HTTP server and reverse proxy, and it can also serve static resources efficiently \citep{nginx}. Dynamic requests are forwarded to the Python application process managed by Gunicorn, a Python WSGI HTTP server that can run Flask applications in a production-style environment \citep{gunicorn,flask}.
+Figure~\ref{fig591} illustrates the server-side deployment pattern. In this architecture, browser requests first reach NGINX, which acts as the reverse proxy. NGINX is typically used as an HTTP server and reverse proxy, and it can also efficiently provide static resources \citep{nginx}. Dynamic requests are then forwarded to the Python application process managed by Gunicorn, which is a Python WSGI HTTP server that can run Flask applications under a production environment \citep{gunicorn,flask}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/deploy.png}
     \caption{Deployment runtime architecture.}
-    \label{fig58}
+    \label{fig591}
 \end{figure}
 
 This separation is useful because static files can be handled and cached independently, while computational requests such as dataset loading, anomaly detection, label submission, threshold recalculation, and similar-pattern search are processed by the backend.
+
+
+
+
+

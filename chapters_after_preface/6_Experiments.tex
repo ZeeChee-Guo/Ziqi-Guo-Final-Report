@@ -11,7 +11,7 @@ The ECG dataset already contains ground-truth anomaly labels. To evaluate anomal
 
 \section{Baselines}
 
-\fei{Include references to each baseline, GitHub source for data and code.}
+% \fei{Include references to each baseline, GitHub source for data and code.}
 
 \noindent To evaluate the ECG results, AnDri is compared with three baseline anomaly detection methods: NormA, SAND, and DAMP. The ECG dataset is taken from the public TSB-UAD benchmark repository,\footnote{\url{https://github.com/TheDatumOrg/TSB-UAD}} while the AnDri demo integration is implemented in the project repository.\footnote{\url{https://github.com/ZeeChee-Guo/AndriDemo}} For the baseline implementations, SAND and DAMP are integrated through publicly available benchmark or project code. NormA is treated separately because its source code is not directly included in the TSB-UAD repository used in this project; access to the NormA implementation needs to be requested from the original authors.
 
@@ -19,8 +19,8 @@ The ECG dataset already contains ground-truth anomaly labels. To evaluate anomal
 
 
 \section{Evaluation Metrics}
-\fei{How do you measure these using what labels?}
-\fei{What does this mean technically?  Avoid general statements that are vague.  PResent what results????}
+% \fei{How do you measure these using what labels?}
+% \fei{What does this mean technically?  Avoid general statements that are vague.  PResent what results????}
 
 
 The evaluation compares the final predicted anomaly labels with the ground-truth labels in the ECG dataset. When the ARFF file is loaded, the implementation reads the ECG signal value and its class label. The class label is stored as GroundTruth: \textbf{GroundTruth[i] = 1} means that point \(i\) is a true anomaly, and \textbf{GroundTruth[i] = 0} means that it is normal.
@@ -43,7 +43,7 @@ Precision measures how many detected anomalies are correct. Recall measures how 
 
 
 \section{ECG Experimental Results and Analysis}
-\fei{Graphs are needed for each experiment and analysis.}
+% \fei{Graphs are needed for each experiment and analysis.}
 
 Table~\ref{tab61} reports the ECG detection results for AnDri and the three baseline methods. AnDri achieves the best recall, F1-score, and AUC among all methods. Although NormA obtains the highest precision, its recall is much lower, which indicates that it misses many true anomaly points. DAMP has relatively high recall, but its lower precision and F1-score show that it produces more false positives. SAND performs poorly on recall in this setting, suggesting that many ECG anomalies are not successfully detected.
 
