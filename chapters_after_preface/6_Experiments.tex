@@ -4,16 +4,16 @@
 \section{Experiment Setup}
 The experiment was conducted on a local Windows laptop. The machine uses an Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz with 8 logical processors and 16 GB of physical memory. The operating system is Windows 11, 64-bit. The system uses Python 3.9.0 as the runtime environment, and the main Python dependencies include Flask, NumPy, pandas, SciPy, scikit-learn, STUMPY, and TSB-UAD.
 
-\section{Datasets}
-The ECG dataset is used in this project. Electrocardiogram (ECG) signals record the electrical activity of the heart as a uni-variate time series. The dataset is taken from the TSB-UAD benchmark and contains approximately 230K time points with labeled anomalies corresponding to premature ventricular contractions \citep{park2025andri,paparrizos2022tsbuad}. This file contains 230,400 points, including 20,200 anomaly-labeled points. In the experiments, the class label is used as the ground truth for evaluating detected anomalous regions.
 
-The ECG dataset already contains ground-truth anomaly labels. To evaluate anomaly detection under concept drift, the AnDri evaluation additionally creates controlled drift regions by combining ECG subsequences from different patients or activity patterns \citep{park2025adaptive}. The time series is divided into several segments, and each segment is assigned to one ECG source pattern. A short transition region is injected between two consecutive patterns to simulate the change in normal behavior. By adjusting the length of this transition region, the experiment can represent concept drift. Approximately 10\% of the ECG series is used as drift regions. These drift regions are not counted as anomalies; they are used to test whether AnDri can avoid misclassify normal behavior as abnormal.
+\section{Datasets}
+
+Three time-series datasets were used to evaluate the system: ECG, Elec, and Weather. These datasets include anomalies and concept drifts. The ECG dataset is a periodic electrocardiogram dataset from the TSB-UAD benchmark suite. It contains approximately 230K time points and labeled anomalies related to premature ventricular contractions \citep{park2025andri,paparrizos2022tsbuad}. In the AnDri demonstration, abrupt and recurrent drift are injected by transitioning between selected ECG patterns. This setting is useful for evaluating whether a detector can avoid treating a change in normal ECG pattern as an anomaly. The Elec dataset describes electricity usage in New South Wales, Australia. It contains approximately 45K time points collected over 2.5 years, with concept drift caused by weekday-to-weekend changes and seasonal usage variation \citep{park2025andri,bifet2010moa}. Anomalies are injected into the series by modifying selected values. This dataset represents energy-consumption data where normal behavior can change because of calendar and seasonal effects. The Weather dataset contains hourly, geographically aggregated temperature records of European countries from 2017 to 2020. It contains approximately 26K time points and includes naturally occurring gradual concept drift caused by seasonal changes \citep{park2025andri,gelaro2017merra2}. The Weather dataset provides a more natural example of gradual drift in real-world time-series data. Among these three data sets, the proportion of anomalies in the ECG data set is 5\%, while the proportions of anomalies in the other two data sets, namely Elec and Weather, are both 10\%.
 
 \section{Baselines}
 
 % \fei{Include references to each baseline, GitHub source for data and code.}
 
-\noindent To evaluate the ECG results, AnDri is compared with three baseline anomaly detection methods: NormA, SAND, and DAMP. The ECG dataset is taken from the public TSB-UAD benchmark repository,\footnote{\url{https://github.com/TheDatumOrg/TSB-UAD}} while the AnDri demo integration is implemented in the project repository.\footnote{\url{https://github.com/ZeeChee-Guo/AndriDemo}} For the baseline implementations, SAND and DAMP are integrated through publicly available benchmark or project code. NormA is treated separately because its source code is not directly included in the TSB-UAD repository used in this project; access to the NormA implementation needs to be requested from the original authors.
+\noindent To evaluate the ECG results, AnDri was compared with three baseline anomaly detection methods: NormA, SAND, and DAMP. The ECG dataset is taken from the public TSB-UAD benchmark repository,\footnote{\url{https://github.com/TheDatumOrg/TSB-UAD}} while the AnDri demo integration is implemented in the project repository.\footnote{\url{https://github.com/ZeeChee-Guo/AndriDemo}} For the baseline implementations, SAND and DAMP are integrated through publicly available benchmark or project code. NormA is treated separately because its source code is not directly included in the TSB-UAD repository used in this project; access to the NormA implementation needs to be requested from the original authors.
 
 
 
@@ -42,9 +42,60 @@ The prediction results are evaluated using precision, recall, and F1-score. Let 
 Precision measures how many detected anomalies are correct. Recall measures how many true anomalies are successfully detected. F1-score combines precision and recall into one value. The experiments also report AUC-ROC. A higher AUC indicates better overall separation between anomalous and normal regions.
 
 
-\section{ECG Experimental Results and Analysis}
-% \fei{Graphs are needed for each experiment and analysis.}
+\section{User-Feedback Threshold Refinement Results and Analysis}
 
+This section evaluates the effect of the user-feedback-driven threshold refinement process under an oracle feedback setting. In the initial setting, each method first produces point-level anomaly scores, and the initial threshold is obtained by selecting the top-$\alpha$ highest-scoring points as anomaly candidates. In other words, $\alpha$ controls the initial expected anomaly proportion. In this experiment, due to the inability to truly simulate user behavior, ground-truth labels are used to simulate ideal user feedback. We assume that the user has accurately identified all the outliers in the training set. Since a large number of correct anomaly labels are provided to the refinement process, the feedback-refined results are expected to improve over the purely automatic initial threshold. Therefore, the results should be interpreted as an upper-bound style evaluation of the feedback process rather than as a fully automatic detection result. The purpose of this experiment is to examine how much the final anomaly labels can improve when reliable user feedback is incorporated into the thresholding stage.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Effect of user-feedback threshold refinement.}
+\label{tab:t0}
+\begin{tabular}{llcccccc}
+\hline
+Dataset & Method
+& \multicolumn{3}{c}{Initial Threshold}
+& \multicolumn{3}{c}{Feedback-Refined} \\
+\cline{3-8}
+& & Precision & Recall & F1
+& Precision & Recall & F1 \\
+\hline
+ECG & AnDri & 0.115 & 0.365 & 0.175 & 0.189 & 0.659 & \textbf{0.294} \\
+ECG & NormA & 0.174 & 0.541 & 0.264 & 0.190 & 0.548 & \textbf{0.283} \\
+ECG & SAND  & 0.157 & 0.389 & 0.224 & 0.216 & 0.572 & \textbf{0.314} \\
+ECG & DAMP  & 0.367 & 0.421 & 0.392 & 0.466 & 0.633 & \textbf{0.537} \\
+\hline
+Elec & AnDri & 0.310 & 0.325 & 0.317 & 0.505 & 0.738 & \textbf{0.599} \\
+Elec & NormA & 0.237 & 0.277 & 0.255 & 0.452 & 0.736 & \textbf{0.560} \\
+Elec & SAND  & 0.269 & 0.230 & 0.248 & 0.517 & 0.668 & \textbf{0.583} \\
+Elec & DAMP  & 0.088 & 0.113 & 0.099 & 0.349 & 0.630 & \textbf{0.449} \\
+\hline
+Weather & AnDri & 0.577 & 0.645 & 0.609 & 0.640 & 0.776 & \textbf{0.701} \\
+Weather & NormA & 0.197 & 0.202 & 0.199 & 0.400 & 0.547 & \textbf{0.462} \\
+Weather & SAND  & 0.196 & 0.203 & 0.199 & 0.397 & 0.547 & \textbf{0.460} \\
+Weather & DAMP  & 0.132 & 0.142 & 0.137 & 0.363 & 0.533 & \textbf{0.432} \\
+\hline
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:t0} shows that the feedback-refined process improves the F1-score for all evaluated methods and datasets. The improvement is particularly clear on the Elec dataset, where AnDri improves from 0.317 to 0.599, NormA improves from 0.255 to 0.560, SAND improves from 0.248 to 0.583, and DAMP improves from 0.099 to 0.449. Similar improvements are also observed on Weather, where the feedback-refined results improve all four methods.
+
+The results suggest that user feedback is useful as a post-processing refinement mechanism for score-based anomaly detection methods. Each evaluated method first produces anomaly scores, and the thresholding stage converts these scores into binary anomaly labels. When user-confirmed anomaly labels are incorporated, the final binary labels become more reliable. This is especially useful for points whose anomaly scores are not high enough to pass the original threshold but are nevertheless confirmed as anomalies by the user.
+
+\subsection{Discussion and Limitations}
+
+The improvement shown in Table~\ref{tab:t0} should be interpreted with caution. This experiment assumes an ideal feedback environment, where user feedback is simulated using real labels. Because the simulated user provides a number of correct anomaly labels, the feedback-refined results are naturally expected to be better than the initial threshold results. Therefore, this experiment should not be read as evidence that the same level of improvement will always occur in real deployment.
+
+In actual interactive systems, users may not check every relevant point, and their feedback may be incomplete or occasionally inconsistent. The purpose of this experiment is instead to demonstrate the potential value of the feedback workflow under a best-case assumption. The initial threshold represents a fully automatic score-to-label conversion, while the feedback-refined results represent a semi-interactive setting in which user-confirmed labels are retained during the final prediction. Under this assumption, the system can recover anomalous points that cannot be detected by the automatic threshold alone.
+
+Another important observation is that the feedback mechanism is not only beneficial to AnDri, but also helpful for the benchmark methods. This indicates that the refinement process is not dependent on a specific anomaly detector. As long as a method can generate anomaly scores, user feedback can be used to improve the final labeling step.
+
+Overall, this experiment supports the effectiveness of incorporating user interaction into AnDri. The automatic threshold provides the initial prediction, but the user feedback stage enables the system to integrate human confirmation into the final anomaly labels. Although the results represent an idealized feedback scenario, they show that combining user-confirmed labels with threshold refinement can improve the quality of anomaly detection results.
+
+
+
+
+\section{ECG Experimental Results and Analysis}
 Table~\ref{tab61} reports the ECG detection results for AnDri and the three baseline methods. AnDri achieves the best recall, F1-score, and AUC among all methods. Although NormA obtains the highest precision, its recall is much lower, which indicates that it misses many true anomaly points. DAMP has relatively high recall, but its lower precision and F1-score show that it produces more false positives. SAND performs poorly on recall in this setting, suggesting that many ECG anomalies are not successfully detected.
 
 \begin{table}[H]
@@ -78,10 +129,7 @@ The bottom part, labeled ``Correcting False Positives'', shows the opposite situ
 
 Overall, the ECG experiment supports the main motivation of AnDri. In time series with concept drift, anomaly detection is not only a matter of finding unusual subsequences. The system must also decide whether a changed subsequence is truly abnormal or simply reflects a shift in normal behavior. The quantitative results and the visual comparison both show that AnDri handles this distinction more effectively than the baseline methods.
 
-
-
-
-\section{Discussion}
+\subsection{Discussion}
 
 The ECG experiment demonstrates that AnDri can distinguish between true anomalies and concept drift in the same time series. The visual comparison shows that AnDri can recognize new normal patterns without incorrectly reporting them as anomalies. This supports the main motivation of the system: anomaly detection should consider whether a changed pattern is truly abnormal or whether it represents a shift in normal behavior.
 
