@@ -1,5 +1,6 @@
 \chapter{Experiments}
 
+This chapter evaluates the main contributions described in the previous chapters. It examines the user-feedback threshold refinement workflow and presents visual case studies on the ECG and Weather datasets.
 
 \section{Experiment Setup}
 The experiment was conducted on a local Windows laptop. The machine uses an Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz with 8 logical processors and 16 GB of physical memory. The operating system is Windows 11, 64-bit. The system uses Python 3.9.0 as the runtime environment, and the main Python dependencies include Flask, NumPy, pandas, SciPy, scikit-learn, STUMPY, and TSB-UAD.
@@ -21,13 +22,13 @@ Three time-series datasets were used to evaluate the system: ECG, Elec, and Weat
 % \fei{What does this mean technically?  Avoid general statements that are vague.  PResent what results????}
 
 
-The evaluation compares the final predicted anomaly labels with the ground-truth labels in the ECG dataset. When the ARFF file is loaded, the implementation reads the ECG signal value and its class label. The class label is stored as GroundTruth: \textbf{GroundTruth[i] = 1} means that point \(i\) is a true anomaly, and \textbf{GroundTruth[i] = 0} means that it is normal.
+The evaluation compares the final predicted anomaly labels with the ground-truth labels in the datasets.
 
 After the adaptive thresholding step, each method has a final threshold. The anomaly score of each point is compared with this threshold to generate a binary prediction. For NormA, SAND, and DAMP, one global threshold is used:
 \[\hat{y}_i = 1 \quad \text{if} \quad s_i > \theta.\]
 For AnDri, the threshold is associated with the normal pattern assigned to the point:
 \[ \hat{y}_i = 1 \quad \text{if} \quad s_i > \theta_{m_i}.\]
-Otherwise, \(\hat{y}_i = 0\). The predicted labels \(\hat{y}_i\) are then compared with the ground-truth labels \(y_i = \textbf{GroundTruth[i]}\) to calculate precision, recall, and F1-score. User feedback labels are only used to adjust the threshold; they are not used as the final evaluation labels.
+Otherwise, \(\hat{y}_i = 0\). The predicted labels \(\hat{y}_i\) are then compared with the ground-truth labels \(y_i = \textbf{GroundTruth[i]}\) to calculate precision, recall, and F1-score.
 
 The prediction results are evaluated using precision, recall, and F1-score. Let TP denote true positives, FP denote false positives, and FN denote false negatives. TP is the number of anomaly-labeled points correctly detected as anomalies. FP is the number of normal points incorrectly detected as anomalies. FN is the number of anomaly-labeled points missed by the method.
 
@@ -42,7 +43,7 @@ Precision measures how many detected anomalies are correct. Recall measures how 
 
 \section{User-Feedback Threshold Refinement Results and Analysis}
 
-This section evaluates the effect of the user-feedback-driven threshold refinement process under an oracle feedback setting. In the initial setting, each method first produces point-level anomaly scores, and the initial threshold is obtained by selecting the top-$\alpha$ highest-scoring points as anomaly candidates. In other words, $\alpha$ controls the initial expected anomaly proportion. In this experiment, due to the inability to truly simulate user behavior, ground-truth labels are used to simulate ideal user feedback. We assume that the user has accurately identified all the outliers in the training set. Since a large number of correct anomaly labels are provided to the refinement process, the feedback-refined results are expected to improve over the purely automatic initial threshold. Therefore, the results should be interpreted as an upper-bound style evaluation of the feedback process rather than as a fully automatic detection result. The purpose of this experiment is to examine how much the final anomaly labels can improve when reliable user feedback is incorporated into the thresholding stage.
+This section evaluates the effect of the user-feedback-driven threshold refinement process under an oracle feedback setting. In the initial setting, each method first produces point-level anomaly scores, and the initial threshold is obtained by selecting the top-$\alpha$ highest-scoring points as anomaly candidates. In this experiment, due to the inability to truly simulate user behavior, ground-truth labels are used to simulate ideal user feedback. We assume that the user has accurately identified all the outliers in the training set. Since a large number of correct anomaly labels are provided to the refinement process, the feedback-refined results are expected to improve over the purely automatic initial threshold. Therefore, the results should be interpreted as an upper-bound style evaluation of the feedback process rather than as a fully automatic detection result.
 
 \begin{table}[H]
 \centering
@@ -84,14 +85,11 @@ The results suggest that user feedback is useful as a post-processing refinement
 
 The improvement shown in Table~\ref{tab:t0} should be interpreted with caution. This experiment assumes an ideal feedback environment, where user feedback is simulated using real labels. Because the simulated user provides a number of correct anomaly labels, the feedback-refined results are naturally expected to be better than the initial threshold results. Therefore, this experiment should not be read as evidence that the same level of improvement will always occur in real deployment.
 
-In actual interactive systems, users may not check every relevant point, and their feedback may be incomplete or occasionally inconsistent. The purpose of this experiment is instead to demonstrate the potential value of the feedback workflow under a best-case assumption. The initial threshold represents a fully automatic score-to-label conversion, while the feedback-refined results represent a semi-interactive setting in which user-confirmed labels are retained during the final prediction. Under this assumption, the system can recover anomalous points that cannot be detected by the automatic threshold alone.
+In actual interactive systems, users may not check every relevant point, and their feedback may be incomplete or inaccurate. The purpose of this experiment is to demonstrate the potential value of the feedback workflow under a best-case assumption. The initial threshold represents a fully automatic score-to-label conversion, while the feedback-refined results represent a semi-interactive setting in which user-confirmed labels are retained during the final prediction. Under this assumption, the system can recover anomalous points that cannot be detected by the automatic threshold alone.
 
-Another important observation is that the feedback mechanism is not only beneficial to AnDri, but also helpful for the benchmark methods. This indicates that the refinement process is not dependent on a specific anomaly detector. As long as a method can generate anomaly scores, user feedback can be used to improve the final labeling step.
+Another observation is that the feedback mechanism is not only beneficial to AnDri, but also helpful for the benchmark methods. This indicates that the refinement process is not dependent on a specific anomaly detector. As long as a method can generate anomaly scores, user feedback can be used to improve the final labeling step.
 
-Overall, this experiment supports the effectiveness of incorporating user interaction into AnDri. The automatic threshold provides the initial prediction, but the user feedback stage enables the system to integrate human confirmation into the final anomaly labels. Although the results represent an idealized feedback scenario, they show that combining user-confirmed labels with threshold refinement can improve the quality of anomaly detection results.
-
-
-
+Overall, this experiment supports the effectiveness of incorporating user interaction into AnDri. The user feedback stage enables the system to integrate human confirmation into the final anomaly labels. Although the results represent an idealized feedback scenario, they show that combining user-confirmed labels with threshold refinement can improve the quality of anomaly detection results.
 
 
 
@@ -145,6 +143,6 @@ The bottom part, labelled ``Correcting False Positives'', shows the opposite sit
     \label{fig:62}
 \end{figure}
 
-Figure~\ref{fig:62} provides an additional example on the Weather dataset. Similar to the ECG case, the top part, labelled ``Comparative Anomalies'', shows a true anomaly interval highlighted in red. In this region, AnDri's score rises above its threshold, while the scores of NormA, SAND, and DAMP remain below their thresholds. This indicates that AnDri detects the anomalous interval, whereas the baseline methods miss it.
+Figure~\ref{fig:62} provides an additional example on the Weather dataset. Similar to the ECG case, the top part shows a true anomaly interval highlighted in red. In this region, AnDri's score rises above its threshold, while the scores of NormA, SAND, and DAMP remain below their thresholds. This indicates that AnDri detects the anomalous interval, whereas the baseline methods miss it.
 
-The bottom part shows a normal interval highlighted in green. AnDri keeps its score below the threshold and correctly treats the region as normal. In contrast, the baseline methods produce higher scores and may classify parts of this normal region as anomalies. This example shows that the same visualization design can also explain AnDri's behaviour on the Weather dataset, where seasonal variation and gradual drift make anomaly detection more challenging.
+The bottom part shows a normal interval highlighted in green. AnDri keeps its score below the threshold and correctly treats the region as normal. In contrast, the baseline methods produce higher scores and may classify parts of this normal region as anomalies. This example shows that the same visualization design can also explain AnDri's behaviour on the Weather dataset, where seasonal variation and gradual drift make anomaly detection challenging.
