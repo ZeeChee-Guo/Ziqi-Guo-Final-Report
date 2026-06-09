@@ -1,12 +1,12 @@
 \chapter{Related Work}
 
-This chapter reviews prior work related to time-series anomaly detection and concept drift adaptation. Existing subsequence anomaly detection methods provide strong foundations for detecting unusual time-series regions. After applying the algorithms introduced in this chapter, each point in the time series data will be assigned an anomaly score. The higher the score, the more likely it is to be an anomaly. This section briefly explains the key ideas, advantages and disadvantages of the NormA, SAND, DAMP and Andri algorithms.
+This chapter reviews prior work related to time-series anomaly detection and concept drift adaptation. Existing subsequence anomaly detection methods provide strong foundations for detecting unusual time-series regions. After applying the algorithms introduced in this chapter, each point in the time series data is assigned an anomaly score. The higher the score, the more likely it is to be an anomaly. This section briefly explains the key ideas, advantages and disadvantages of the NormA, SAND, DAMP and Andri algorithms.
 
 \section{NormA}
 
 NormA is an unsupervised method for subsequence anomaly detection in time series \citep{boniol2021norma}. The key idea is that normal behavior tends to appear repeatedly over time. NormA first extracts subsequences from the time series and uses offline clustering to identify representative groups of recurring subsequences. The representative subsequences from these clusters form a normal model that characterizes the dominant normal behavior in the data.
 
-During the detection process, the candidate subsequences are compared with the normal patterns that have been learned in the model. When a subsequence differs significantly from the representative normal pattern, it will receive a higher anomaly score. In this way, NormA regards the anomaly as a subsequence that deviates from the repetitive patterns discovered from the data.
+During the detection process, the candidate subsequences are compared with the normal patterns that have been learned in the model. When a subsequence differs significantly from the representative normal pattern, it receives a higher anomaly score. In this way, NormA regards the anomaly as a subsequence that deviates from the repetitive patterns discovered from the data.
 
 NormA learns the regular patterns that can summarize repetitive shapes. Therefore, the abnormal score is calculated based on normal behavior. This makes NormA very useful when the data contains repetitive normal patterns, as this method can capture the main structure of the time series and use it as a stable reference standard for subsequent anomaly detection.
 
@@ -15,7 +15,7 @@ However, NormA builds its normal model offline and treats the learned patterns a
 
 \section{SAND}
 
-SAND is an unsupervised online method for streaming subsequence anomaly detection \citep{boniol2021sand}. SAND is designed for data streams, where new values arrive continuously and the model must be updated over time. SAND maintains a model of normal behavior and score new subsequences according to their distance from this model.
+SAND is an unsupervised online method for streaming subsequence anomaly detection \citep{boniol2021sand}. SAND is designed for data streams, where new values arrive continuously and the model must be updated over time. SAND maintains a model of normal behavior and scores new subsequences according to their distance from this model.
 
 SAND first builds an initial normal model from an initial batch of the time series. It extracts subsequences from the batch and applies a time-series clustering method based on \(k\)-Shape to group similar subsequences. The centroids of these clusters represent common subsequence shapes and are stored as the current model of normal behavior. When a new batch arrives, SAND clusters the new subsequences and compares the new cluster centroids with the existing model. If a new cluster matches an existing normal pattern, the model can be updated. If it is far from the existing model, the corresponding subsequences receive higher anomaly scores.
 
@@ -40,7 +40,7 @@ The main advantage of Andri is to explicitly model the lifecycle of normal patte
 
 \section{Anomaly Score Generation}
 
-Anomaly detect algorithms mentioned in this report generate anomaly scores for each data point
+Anomaly detection algorithms mentioned in this report generate anomaly scores for each data point
 \[S=[s_1,s_2,\ldots,s_n],\]
 where a larger score indicates stronger evidence of abnormality. In the implementation, scores are normalized to the interval \([0,1]\).
 

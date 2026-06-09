@@ -18,7 +18,7 @@ After the anomaly scores are generated, a threshold is applied to decide the fin
 0, & \text{otherwise,}
 \end{cases}
 \]
-where \(\hat{y}_i=1\) means that point \(i\) is predicted as anomaly, and \(\hat{y}_i=0\) means that it is predicted as normal point. This workflow is common in time-series anomaly detection. Time series anomaly detect methods produce anomaly scores. Final anomaly labels will depend on how the threshold is selected.
+where \(\hat{y}_i=1\) means that point \(i\) is predicted as anomaly, and \(\hat{y}_i=0\) means that it is predicted as normal point. This workflow is common in time-series anomaly detection. Time series anomaly detect methods produce anomaly scores. Final anomaly labels depends on how the threshold is selected.
 
 Concept drift complicates threshold selection because normal behavior changes over time. A fixed threshold may therefore produce false positives or miss true anomalies. AnDri system addresses this problem by supporting interactive threshold adjustment. The user can review candidate anomalous points, provide feedback. So that the system can refine the threshold according to the user feedback to convert anomaly scores into final labels. This feedback process is important in the system because both AnDri and the baseline methods generate point anomaly scores, and a threshold must be proposed and refined to predict the final decision.
 
@@ -144,9 +144,9 @@ It can be seen in Section 4.1 that choosing an appropriate threshold is a challe
 
 The anomaly detection algorithm generates anomaly scores for each data point. After that, a threshold needs to be selected to determine which points are anomalies. As explained in the previous section, the selection of the threshold is a challenging task. Therefore, this project uses an active-learning-based threshold refinement workflow that combines detector scores, partial user labels, Bayesian mixture fitting, and iterative candidate review. 
 
-The workflow begins with the user's selected training region, an initial set of marked anomaly points, and a maximum anomaly proportion \(\rho\). For baseline detectors such as NormA, SAND, and DAMP, the system estimates one global threshold from the training region. For AnDri, the same threshold estimation process is applied within each normal-pattern group, so that different normal behaviors will have different decision thresholds. 
+The workflow begins with the user's selected training region, an initial set of marked anomaly points, and a maximum anomaly proportion \(\rho\). For baseline detectors such as NormA, SAND, and DAMP, the system estimates one global threshold from the training region. For AnDri, the same threshold estimation process is applied within each normal-pattern group, so that different normal behaviors have different decision thresholds. 
 
-The active-learning loop is triggered when the currently marked anomaly scores do not support a stable threshold. In that case, the system selects informative candidates: possible low-score mislabels and unlabeled points near the uncertain boundary between score groups. The user's feedback updates the label flags, and the Bayesian mixture model is fitted again using the revised confirmed anomaly scores. The loop continues until the score distribution is stable enough to set the final threshold. Figure~\ref{fig:42} summarizes this process. The detailed illustration of the process will be presented in next subsection. 
+The active-learning loop is triggered when the currently marked anomaly scores do not support a stable threshold. In that case, the system selects informative candidates: possible low-score mislabels and unlabeled points near the uncertain boundary between score groups. The user's feedback updates the label flags, and the Bayesian mixture model is fitted again using the revised confirmed anomaly scores. The loop continues until the score distribution is stable enough to set the final threshold. Figure~\ref{fig:42} summarizes this process. The next subsection presents the detailed illustration of this process.
 
 \begin{figure}[H]
 \centering
