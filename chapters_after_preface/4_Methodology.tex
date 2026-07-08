@@ -1,5 +1,7 @@
 \chapter{Methodology}
 
+\fei{At the start of this chapter, it would be extremely useful for you to present an architecture diagram that shows the different components in your }
+
 This chapter explains the methodology used to refine anomaly thresholds in this project. It first discusses why determining the final threshold for anomaly scores is challenging after scores have been assigned to each data point. A threshold that is too strict may incorrectly classify normal behavior as anomalous, while a threshold that is too loose may fail to detect true anomalies. Based on this motivation, Section 4.2 proceeds to describe the proposed threshold optimization process. It explains how initial user labels and the maximum anomaly proportion are used, how the system fits the distribution of confirmed anomaly scores, how uncertain points are selected for additional user review, and how the threshold is iteratively updated before producing the final anomaly labels.
 
 \section{Problem Definition}
@@ -8,9 +10,9 @@ Let \(T=[x_1,x_2,\ldots,x_n]\) be a uni-variate time series, where \(x_i\) is th
 
 The anomaly detection algorithms transforms the original time series into a anomaly-score sequence:
 \[S=[s_1,s_2,\ldots,s_n].\]
-Here, each point \(i\) has an anomaly score \(s_i\).
+Here, each point \(i\) \fei{$x_i$?  according to your first sentence.} has an anomaly score \(s_i\).
 
-After the anomaly scores are generated, a threshold is applied to decide the final anomaly label (anomaly or normal points)
+After the anomaly scores are generated, \fei{Where is this detail?  Refer to the section in the report where you describe this method.} a threshold is applied to decide the final anomaly label (anomaly or normal points)
 \[
 \hat{y}_i =
 \begin{cases}
@@ -20,7 +22,7 @@ After the anomaly scores are generated, a threshold is applied to decide the fin
 \]
 where \(\hat{y}_i=1\) means that point \(i\) is predicted as anomaly, and \(\hat{y}_i=0\) means that it is predicted as normal point. This workflow is common in time-series anomaly detection. Time series anomaly detect methods produce anomaly scores. Final anomaly labels depends on how the threshold is selected.
 
-Concept drift complicates threshold selection because normal behavior changes over time. A fixed threshold may therefore produce false positives or miss true anomalies. AnDri system addresses this problem by supporting interactive threshold adjustment. The user can review candidate anomalous points, provide feedback. So that the system can refine the threshold according to the user feedback to convert anomaly scores into final labels. This feedback process is important in the system because both AnDri and the baseline methods generate point anomaly scores, and a threshold must be proposed and refined to predict the final decision.
+Concept drift complicates threshold selection because normal behavior changes over time. A fixed threshold may therefore produce false positives or miss true anomalies. AnomDrift addresses this problem by supporting interactive threshold adjustment. The user can review candidate anomalous points, provide feedback. So that the system can refine the threshold according to the user feedback to convert anomaly scores into final labels. This feedback process is important in the system because both AnDri and the baseline methods generate point anomaly scores, and a threshold must be proposed and refined to predict the final decision.
 
 Figure~\ref{fig41} illustrates this problem formulation. The upper plot shows the original time series. The lower plot shows the anomaly score of each time point. The threshold is applied to the anomaly-score curve. At the same time, this picture also illustrates that a high threshold may miss true anomalies because only the anomalies with most extreme scores are detected. A low threshold may generate many false positives by labeling normal points as anomalies. The target threshold achieves a balance between detecting true anomalies and limiting false alarms.
 
@@ -142,9 +144,14 @@ It can be seen in Section 4.1 that choosing an appropriate threshold is a challe
 
 \subsection{Method Overview}
 
+
+\fei{This is not specific enough.  Relying only on english text, without an example, misses many details.  How do you combine scores, and how are labels used?  What does it mean to "estimate global threshold from training region?"   So different methods have different thresholds for different groups of points?  What does it mean the anomaly socres do not support stable threshold?   Please write an algorithm pseudocode to show the step-by-step algorithm, and describe each line of the algorithm what are the method steps.}
+
 The anomaly detection algorithm generates anomaly scores for each data point. After that, a threshold needs to be selected to determine which points are anomalies. As explained in the previous section, the selection of the threshold is a challenging task. Therefore, this project uses an active-learning-based threshold refinement workflow that combines detector scores, partial user labels, Bayesian mixture fitting, and iterative candidate review. 
 
 The workflow begins with the user's selected training region, an initial set of marked anomaly points, and a maximum anomaly proportion \(\rho\). For baseline detectors such as NormA, SAND, and DAMP, the system estimates one global threshold from the training region. For AnDri, the same threshold estimation process is applied within each normal-pattern group, so that different normal behaviors have different decision thresholds. 
+
+\fei{Figure 4.2: define your conditions using variables. What condition does "Stable score distribution" check? Do not rely on vague sentences to convey algorithm details.  Please revise Fig 4.2 to be more specific.}
 
 The active-learning loop is triggered when the currently marked anomaly scores do not support a stable threshold. In that case, the system selects informative candidates: possible low-score mislabels and unlabeled points near the uncertain boundary between score groups. The user's feedback updates the label flags, and the Bayesian mixture model is fitted again using the revised confirmed anomaly scores. The loop continues until the score distribution is stable enough to set the final threshold. Figure~\ref{fig:42} summarizes this process. The next subsection presents the detailed illustration of this process.
 

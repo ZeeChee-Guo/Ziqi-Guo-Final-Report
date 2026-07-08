@@ -47,6 +47,9 @@ Figure~\ref{fig:20} illustrates the difference between a point anomaly and a sub
 Concept drift refers to a change in the underlying data distribution over time \citep{gama2014survey,lu2019learning}. In time-series data, this means that the definition of normal behavior is not fixed. A pattern that was unusual in the past may become normal later, or a previously normal pattern may disappear as the process evolves.
 
 Concept drift can appear in several forms. Abrupt drift occurs when the data changes suddenly from one normal pattern to another. For example, electricity usage may drop sharply between weekday and weekend. Gradual drift occurs when the transition happens slowly, such as seasonal temperature changes from winter to spring. Recurring drift occurs when a previously seen normal pattern returns, such as repeated daily, weekly, or seasonal shopping behavior.
+
+\fei{This is much too short given the importance of the topic.  You need to describe what is the difference between the three types of drift, and give examples.  Please expand.}
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/background_ecg_drift_anomaly.png}
@@ -58,6 +61,7 @@ Concept drift can appear in several forms. Abrupt drift occurs when the data cha
 
 A normal pattern is a representative subsequence or group of subsequences that describes expected behavior in a time series. Many time-series anomaly detection methods compare a new subsequence against known normal patterns and treat large dissimilarity as evidence of abnormality.
 
+\fei{This section is only two sentences and much too short to understand what is a normal pattern.  Please expand with more description and example.}
 
 \section{Active Learning for User Feedback}
 

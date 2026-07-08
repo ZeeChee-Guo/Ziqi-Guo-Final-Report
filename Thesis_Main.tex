@@ -33,6 +33,7 @@
 \usepackage{comment}
 \renewcommand{\contentsname}{Table of Contents} % to rename it from Contents to Table of Contents % https://tex.stackexchange.com/questions/28516/how-to-change-the-title-of-toc
 \usepackage{geometry}
+\usepackage{pifont}
 \usepackage[compress, numbers]{natbib} % Bibliography formatting
 % \usepackage[round, sort, numbers]{natbib}
 \usepackage{fancyhdr} % Header and footer styling
@@ -71,6 +72,13 @@
 
 \newcommand{\fei}[1]{{\noindent \color{red}{Comment(Fei): #1}}}
 \newcommand{\red}[1]{\textcolor{red}{#1}}
+
+
+\definecolor{darkgold}{RGB}{255,128,0}
+\newcommand{\reply}[2]{%
+\noindent\textcolor{darkgold}{\textbf{Response:} #1}\\
+\textcolor{blue}{\textbf{Revision:} #2}\par\vspace{0.8em}
+}
 
 
 %----------------- Document Begins ------------------

@@ -6,7 +6,10 @@
 % \fei{Briefly describe 2-3 related work techniques (high level) and state why they are not sufficient, state technical weaknesses.  I suggest you focus on NormA, SAND, DAMP.}
 
 
-\section{Problem Domain}
+
+\fei{We don't start a chapter with a section header, remove this 1.1 title.}
+
+\reply{Remove this title}{Remove the 1.1 title}
 
 A time series is a sequence of observations recorded over time. Time-series data are common in many real-world applications, such as electrocardiogram (ECG) monitoring, electricity demand forecasting, and financial markets \citep{schmidl2022anomaly}. Unlike ordinary data, the order of observations in a time series is important. The meaning of a value depends not only on its magnitude, but also on when it occurs and how it relates to surrounding observations.
 
@@ -60,7 +63,8 @@ Existing time-series anomaly detection methods provide important foundations for
 
 AnDri algorithm addresses this challenge by considering anomaly detection and concept drift detection together \citep{park2025andri,park2025adaptive}. AnDri algorithm does not use a single global threshold. It maintains multiple normal patterns and updates them as the data changes. This allows the system to distinguish anomalies from changes caused by concept drift.
 
-In this report, \textbf{AnDri algorithm} refers to the anomaly detection algorithm \citep{park2025adaptive}. The \textbf{AnDri system} is the interactive visual analytics platform developed in this project.
+In this report, \textbf{AnDri algorithm} refers to the anomaly detection algorithm \citep{park2025adaptive}. The \textbf{AnDri system} is the interactive visual analytics platform developed in this project.  \fei{please proof read carefully to replace all occurrences of this with your new name.  Remove "andri system".}
+\reply{Change all 'Andri System' to 'AnomDrift'}{In this report, AnDri algorithm refers to the anomaly detection algorithm \citep{park2025adaptive}. AnomDrift is the interactive visual analytics platform developed in this project.}
 
 \section{Project Goals}
 
@@ -79,9 +83,12 @@ Implemented a light end-to-end web-based system that supports dataset loading, t
 Designed and implemented a human-in-the-loop threshold refinement workflow based on Bayesian Gaussian mixture modeling and active learning. The framework uses user feedback to refine anomaly thresholds, identify uncertain candidates, and support pattern-specific threshold assignment under concept drift.
 
 \item \textbf{System integration and experimental evaluation.}
-Integrated AnDri and baseline methods (NormA, SAND, and DAMP) into a unified experimental workflow. Conducted comparative evaluations across multiple datasets using precision, recall, F1-score, and AUC, and analyzed the effectiveness of different methods in distinguishing anomalies from concept drift.
+Integrated AnDri and baseline methods (NormA, SAND, and DAMP) \fei{Anytime you refer to these existing methods, the reader does not know these, and you should provide a citation to their original papers.} into a unified experimental workflow. Conducted comparative evaluations across multiple datasets using precision, recall, F1-score, and AUC, and analyzed the effectiveness of different methods in distinguishing anomalies from concept drift.  
+
+\reply{Add citation here}{Integrated AnDri\cite{park2025adaptive} and baseline methods (NormA\cite{boniol2021norma}, SAND\cite{boniol2021sand}, and DAMP\cite{lu2022damp}) into a unified experimental workflow. Conducted comparative evaluations across multiple datasets using precision, recall, F1-score, and AUC, and analyzed the effectiveness of different methods in distinguishing anomalies from concept drift.  }
+
 \end{enumerate}
 
 
 \section{Organization}
-The organization of the remaining parts of this report is as follows. The second chapter introduces the basic concepts necessary for understanding the project. The third chapter reviews the related work on time series anomaly detection and drift-aware detection. Chapters 4, 5, and 6 constitute the main body of the individual work of this project. Chapter 4 introduces the methodology adopted by the AnDri system, including point-level anomaly score generation, adaptive threshold optimization, candidate review based on active learning, and final anomaly determination. Chapter 5 describes the architecture design and implementation of the system, covering the front-end interaction process, Flask backend, data processing pipeline, visualization components, benchmark integration, and deployment settings. Chapter 6 reports the experiments and case studies prepared for evaluating the system, including dataset settings, evaluation metrics, comparison with benchmark models, result visualization, and analysis of abnormal behavior and drift behavior. Finally, Chapter 7 summarizes this report and discusses future research directions.
+The organization of the remaining parts of this report is as follows. The second chapter introduces the basic concepts necessary for understanding the project. The third chapter reviews the related work on time series anomaly detection and drift-aware detection. Chapters 4, 5, and 6 constitute the main body of the individual work of this project. Chapter 4 introduces the methodology adopted by the AnomDrift, including point-level anomaly score generation, adaptive threshold optimization, candidate review based on active learning, and final anomaly determination. Chapter 5 describes the architecture design and implementation of the system, covering the front-end interaction process, Flask backend, data processing pipeline, visualization components, benchmark integration, and deployment settings. Chapter 6 reports the experiments and case studies prepared for evaluating the system, including dataset settings, evaluation metrics, comparison with benchmark models, result visualization, and analysis of abnormal behavior and drift behavior. Finally, Chapter 7 summarizes this report and discusses future research directions.
