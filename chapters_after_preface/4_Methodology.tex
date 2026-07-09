@@ -1,8 +1,93 @@
 \chapter{Methodology}
 
 \fei{At the start of this chapter, it would be extremely useful for you to present an architecture diagram that shows the different components in your }
+\reply{Draw an architecture diagram of the method component}{This chapter describes the workflow adopted by AnomDrift to convert the output of the time series anomaly detection algorithms into the final decision. Firstly, the input time series \(T\) and the selected training area are processed by an anomaly detection method to generate point-level anomaly scores \(S=[s_1, s_2, \ldots, s_n]\). These scores measure the suspiciousness of each time point, but they are not the final anomaly labels. After generating the scores, AnomDrift uses user labels \(f_i\), the maximum anomaly ratio \(\rho\), and the active learning threshold optimization process to determine a more appropriate decision threshold. The optimization process employs Bayesian Gaussian Mixture Model (BGMM) fitting and candidate review, and is adjusted in combination with user feedback. Finally, each score is compared with the optimized threshold \(\theta\) to obtain the final anomaly determination result. Figure~\ref{fig411} summarizes the workflow of this method.}
 
-This chapter explains the methodology used to refine anomaly thresholds in this project. It first discusses why determining the final threshold for anomaly scores is challenging after scores have been assigned to each data point. A threshold that is too strict may incorrectly classify normal behavior as anomalous, while a threshold that is too loose may fail to detect true anomalies. Based on this motivation, Section 4.2 proceeds to describe the proposed threshold optimization process. It explains how initial user labels and the maximum anomaly proportion are used, how the system fits the distribution of confirmed anomaly scores, how uncertain points are selected for additional user review, and how the threshold is iteratively updated before producing the final anomaly labels.
+\textcolor{blue}{This chapter first discusses why determining the final threshold for anomaly scores is challenging after scores have been assigned to each data point. A threshold that is too strict may incorrectly classify normal behavior as anomalous, while a threshold that is too loose may fail to detect true anomalies. Based on this motivation, Section 4.2 proceeds to describe the proposed threshold optimization process. It explains how initial user labels and the maximum anomaly proportion are used, how the system fits the distribution of confirmed anomaly scores, how uncertain points are selected for additional user review, and how the threshold is iteratively updated before producing the final anomaly labels.}
+
+% This chapter explains the methodology used to refine anomaly thresholds in this project. It first discusses why determining the final threshold for anomaly scores is challenging after scores have been assigned to each data point. A threshold that is too strict may incorrectly classify normal behavior as anomalous, while a threshold that is too loose may fail to detect true anomalies. Based on this motivation, Section 4.2 proceeds to describe the proposed threshold optimization process. It explains how initial user labels and the maximum anomaly proportion are used, how the system fits the distribution of confirmed anomaly scores, how uncertain points are selected for additional user review, and how the threshold is iteratively updated before producing the final anomaly labels.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        >=Stealth,
+        font=\small,
+        node distance=0.55cm,
+        block/.style={
+            rectangle,
+            rounded corners,
+            draw=blue!60!black,
+            thick,
+            align=center,
+            minimum height=0.8cm,
+            text width=6.6cm,
+            inner sep=5pt,
+            fill=blue!8
+        },
+        inputblock/.style={
+            rectangle,
+            rounded corners,
+            draw=black!60,
+            thick,
+            align=center,
+            minimum height=0.8cm,
+            text width=6.6cm,
+            inner sep=5pt,
+            fill=gray!12
+        },
+        processblock/.style={
+            rectangle,
+            rounded corners,
+            draw=orange!70!black,
+            thick,
+            align=center,
+            minimum height=0.8cm,
+            text width=6.6cm,
+            inner sep=5pt,
+            fill=orange!10
+        },
+        outputblock/.style={
+            rectangle,
+            rounded corners,
+            draw=green!55!black,
+            thick,
+            align=center,
+            minimum height=0.8cm,
+            text width=6.6cm,
+            inner sep=5pt,
+            fill=green!10
+        },
+        arrow/.style={->, thick}
+    ]
+
+    \node[inputblock] (input)
+    {Input time series \(T\) and selected training region};
+
+    \node[block, below=of input] (score)
+    {Generate anomaly scores \(S=[s_1,s_2,\ldots,s_n]\)};
+
+    \node[inputblock, below=of score] (labels)
+    {User labels \(f_i\) and maximum anomaly proportion \(\rho\)};
+
+    \node[processblock, below=of labels] (active)
+    {Active-learning threshold refinement using BGMM fitting and candidate review};
+
+    \node[outputblock, below=of active] (threshold)
+    {Refined decision threshold \(\theta\)};
+
+    \node[outputblock, below=of threshold] (decision)
+    {Final anomaly decision: \(\hat{y}_i=1\) if \(s_i>\theta\)};
+
+    \draw[arrow] (input) -- (score);
+    \draw[arrow] (score) -- (labels);
+    \draw[arrow] (labels) -- (active);
+    \draw[arrow] (active) -- (threshold);
+    \draw[arrow] (threshold) -- (decision);
+
+    \end{tikzpicture}
+    \caption{Methodology overview of anomaly score generation, user feedback, active-learning threshold refinement, and final anomaly decision.}
+    \label{fig411}
+\end{figure}
 
 \section{Problem Definition}
 
@@ -12,7 +97,16 @@ The anomaly detection algorithms transforms the original time series into a anom
 \[S=[s_1,s_2,\ldots,s_n].\]
 Here, each point \(i\) \fei{$x_i$?  according to your first sentence.} has an anomaly score \(s_i\).
 
+\reply{Change \(i\) to $x_i$ here}{Here, each point \(x_i\) has an anomaly score \(s_i\).}
+
+
+\reply{Add label to section `Anomaly Score Generation', and refer to the section here.}{After the anomaly scores are generated, as described in Section~\ref{sec:ASG}, a threshold is applied to decide the final anomaly label (anomaly or normal points)}
+
+
 After the anomaly scores are generated, \fei{Where is this detail?  Refer to the section in the report where you describe this method.} a threshold is applied to decide the final anomaly label (anomaly or normal points)
+
+\reply{Add label to section `Anomaly Score Generation', and refer to the section here.}{After the anomaly scores are generated, as described in Section~\ref{sec:ASG}, a threshold is applied to decide the final anomaly label (anomaly or normal points)}
+
 \[
 \hat{y}_i =
 \begin{cases}
